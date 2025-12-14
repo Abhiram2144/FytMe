@@ -1,0 +1,200 @@
+{
+  "info": {
+    "name": "Fashion Recommendation API",
+    "description": "Collection of API requests for testing the Fashion Recommendation Backend",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Health Check",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:8000/api/health",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "8000",
+          "path": ["api", "health"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Get Available Styles",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:8000/api/styles",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "8000",
+          "path": ["api", "styles"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Analyze Skin Tone",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "formdata",
+          "formdata": [
+            {
+              "key": "file",
+              "type": "file",
+              "src": "/path/to/your/selfie.jpg",
+              "description": "Upload a selfie image (JPEG or PNG)"
+            }
+          ]
+        },
+        "url": {
+          "raw": "http://localhost:8000/api/analyze-skin-tone",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "8000",
+          "path": ["api", "analyze-skin-tone"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Recommend Outfits - Old Money Style (Type III)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"fitzpatrick_type\": \"III\",\n  \"preferred_style\": \"old money\"\n}"
+        },
+        "url": {
+          "raw": "http://localhost:8000/api/recommend-outfits",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "8000",
+          "path": ["api", "recommend-outfits"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Recommend Outfits - Casual Style (Type II)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"fitzpatrick_type\": \"II\",\n  \"preferred_style\": \"casual\"\n}"
+        },
+        "url": {
+          "raw": "http://localhost:8000/api/recommend-outfits",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "8000",
+          "path": ["api", "recommend-outfits"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Recommend Outfits - Streetwear Style (Type V)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"fitzpatrick_type\": \"V\",\n  \"preferred_style\": \"streetwear\"\n}"
+        },
+        "url": {
+          "raw": "http://localhost:8000/api/recommend-outfits",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "8000",
+          "path": ["api", "recommend-outfits"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Recommend Outfits - Professional Style (Type IV)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"fitzpatrick_type\": \"IV\",\n  \"preferred_style\": \"professional\"\n}"
+        },
+        "url": {
+          "raw": "http://localhost:8000/api/recommend-outfits",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "8000",
+          "path": ["api", "recommend-outfits"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Recommend Outfits - Minimalist Style (Type I)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"fitzpatrick_type\": \"I\",\n  \"preferred_style\": \"minimalist\"\n}"
+        },
+        "url": {
+          "raw": "http://localhost:8000/api/recommend-outfits",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "8000",
+          "path": ["api", "recommend-outfits"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Root Endpoint",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:8000/",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "8000",
+          "path": [""]
+        }
+      },
+      "response": []
+    }
+  ]
+}

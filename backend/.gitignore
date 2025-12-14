@@ -1,0 +1,77 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual Environment
+venv/
+env/
+ENV/
+.venv
+
+# Assets - keep structure, ignore images
+assets/clothes/*.jpg
+assets/clothes/*.jpeg
+assets/clothes/*.png
+assets/clothes/*.JPG
+assets/clothes/*.JPEG
+assets/clothes/*.PNG
+!assets/clothes/README.md
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Models (if large)
+models/*.pt
+models/*.pth
+models/*.onnx
+
+# Data - Ignore all images in 1000_class folder
+data/1000_class/1000img_class/
+data/1000_class/*.ipynb
+
+# Keep CSV metadata
+!data/1000_class/*.csv
+
+# Remove old image folder structure (no longer used)
+data/images/
+
+# Environment variables
+.env
+.env.local
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+
+# FastAPI
+.fastapi/

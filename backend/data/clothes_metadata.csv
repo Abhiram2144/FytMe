@@ -1,0 +1,87 @@
+image,category,predicted_color,predicted_pattern,predicted_style
+shirt_001.jpg,shirt,white,solid,old money
+shirt_002.jpg,shirt,navy,solid,old money
+shirt_003.jpg,shirt,beige,solid,minimalist
+shirt_004.jpg,shirt,black,solid,edgy
+shirt_005.jpg,shirt,gray,solid,professional
+shirt_006.jpg,shirt,olive,solid,casual
+shirt_007.jpg,shirt,burgundy,solid,old money
+shirt_008.jpg,shirt,cream,solid,bohemian
+shirt_009.jpg,shirt,khaki,solid,preppy
+shirt_010.jpg,shirt,charcoal,solid,professional
+tshirt_001.jpg,t-shirt,white,solid,casual
+tshirt_002.jpg,t-shirt,black,solid,streetwear
+tshirt_003.jpg,t-shirt,gray,solid,minimalist
+tshirt_004.jpg,t-shirt,navy,solid,preppy
+tshirt_005.jpg,t-shirt,beige,solid,casual
+sweater_001.jpg,sweater,camel,solid,old money
+sweater_002.jpg,sweater,navy,solid,preppy
+sweater_003.jpg,sweater,burgundy,solid,old money
+sweater_004.jpg,sweater,forest green,solid,casual
+sweater_005.jpg,sweater,gray,solid,minimalist
+pants_001.jpg,pants,navy,solid,old money
+pants_002.jpg,pants,khaki,solid,preppy
+pants_003.jpg,pants,black,solid,professional
+pants_004.jpg,pants,gray,solid,minimalist
+pants_005.jpg,pants,olive,solid,casual
+pants_006.jpg,pants,brown,solid,casual
+pants_007.jpg,pants,charcoal,solid,professional
+pants_008.jpg,pants,beige,solid,old money
+jeans_001.jpg,jeans,blue,solid,casual
+jeans_002.jpg,jeans,black,solid,edgy
+jeans_003.jpg,jeans,light blue,solid,casual
+jeans_004.jpg,jeans,dark blue,solid,streetwear
+trousers_001.jpg,trousers,black,solid,professional
+trousers_002.jpg,trousers,navy,solid,professional
+trousers_003.jpg,trousers,gray,solid,professional
+trousers_004.jpg,trousers,beige,solid,old money
+shoes_001.jpg,shoes,black,solid,professional
+shoes_002.jpg,shoes,brown,solid,old money
+shoes_003.jpg,shoes,white,solid,minimalist
+shoes_004.jpg,shoes,navy,solid,preppy
+sneakers_001.jpg,sneakers,white,solid,casual
+sneakers_002.jpg,sneakers,black,solid,streetwear
+sneakers_003.jpg,sneakers,gray,solid,athletic
+sneakers_004.jpg,sneakers,navy,solid,casual
+loafers_001.jpg,loafers,brown,solid,old money
+loafers_002.jpg,loafers,black,solid,professional
+loafers_003.jpg,loafers,burgundy,solid,preppy
+boots_001.jpg,boots,brown,solid,casual
+boots_002.jpg,boots,black,solid,edgy
+boots_003.jpg,boots,tan,solid,vintage
+jacket_001.jpg,jacket,navy,solid,old money
+jacket_002.jpg,jacket,black,solid,edgy
+jacket_003.jpg,jacket,khaki,solid,casual
+jacket_004.jpg,jacket,gray,solid,minimalist
+blouse_001.jpg,blouse,white,solid,professional
+blouse_002.jpg,blouse,cream,solid,bohemian
+blouse_003.jpg,blouse,beige,solid,minimalist
+shirt_011.jpg,shirt,emerald,solid,old money
+shirt_012.jpg,shirt,royal blue,solid,preppy
+shirt_013.jpg,shirt,terracotta,solid,bohemian
+shirt_014.jpg,shirt,forest green,solid,casual
+shirt_015.jpg,shirt,cobalt,solid,professional
+pants_009.jpg,pants,rust,solid,casual
+pants_010.jpg,pants,terracotta,solid,bohemian
+pants_011.jpg,pants,forest green,solid,casual
+skirt_001.jpg,skirt,black,solid,professional
+skirt_002.jpg,skirt,navy,solid,preppy
+skirt_003.jpg,skirt,beige,solid,minimalist
+skirt_004.jpg,skirt,khaki,solid,casual
+shorts_001.jpg,shorts,khaki,solid,casual
+shorts_002.jpg,shorts,navy,solid,preppy
+shorts_003.jpg,shorts,black,solid,athletic
+sweater_006.jpg,sweater,cream,solid,bohemian
+sweater_007.jpg,sweater,rust,solid,vintage
+sweater_008.jpg,sweater,teal,solid,casual
+tshirt_006.jpg,t-shirt,olive,solid,casual
+tshirt_007.jpg,t-shirt,burgundy,solid,streetwear
+tshirt_008.jpg,t-shirt,forest green,solid,casual
+tshirt_009.jpg,t-shirt,rust,solid,vintage
+tshirt_010.jpg,t-shirt,charcoal,solid,minimalist
+shoes_005.jpg,shoes,burgundy,solid,old money
+shoes_006.jpg,shoes,tan,solid,casual
+sneakers_005.jpg,sneakers,beige,solid,minimalist
+sneakers_006.jpg,sneakers,olive,solid,streetwear
+loafers_004.jpg,loafers,tan,solid,preppy
+boots_004.jpg,boots,burgundy,solid,vintage
