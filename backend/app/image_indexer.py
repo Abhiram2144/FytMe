@@ -177,7 +177,7 @@ class ClothingIndexer:
             try:
                 item = self._index_image(img_path)
                 self.catalog.append(item)
-                print(f"✓ {item['image']} -> {item['category']}, {item['color']}, {item['style']}")
+                print(f"✓ {item['image']} -> {item['category']}, {item['color']}, {item['primary_style']}")
             except Exception as e:
                 print(f"✗ Failed to index {img_path.name}: {e}")
         

@@ -1,366 +1,652 @@
 [
   {
-    "image": "jacket-beige-preppy-b992ba31.jpeg",
-    "category": "jacket",
-    "color": "beige",
-    "style": "preppy",
+    "image": "polo-navy-old-money-casual-b992ba31.jpeg",
+    "category": "polo",
+    "category_score": 0.8167744278907776,
+    "color": "navy",
+    "color_score": 0.29669642448425293,
+    "styles": [
+      {
+        "label": "old_money",
+        "score": 0.41303977370262146
+      },
+      {
+        "label": "casual",
+        "score": 0.33700650930404663
+      },
+      {
+        "label": "minimalist",
+        "score": 0.10045964270830154
+      }
+    ],
+    "primary_style": "old_money",
+    "pattern": "solid",
+    "pattern_score": 0.6868848204612732,
     "hash": "b992ba31ce21cbee98c15d16b149a12a"
   },
   {
-    "image": "jacket-beige-preppy-b992ba31.jpeg",
-    "category": "jacket",
-    "color": "beige",
-    "style": "preppy",
-    "hash": "b992ba31ce21cbee98c15d16b149a12a"
-  },
-  {
-    "image": "jacket-black-streetwear-0319fd1b.jpeg",
-    "category": "jacket",
+    "image": "hoodie-black-streetwear-casual-0319fd1b.jpeg",
+    "category": "hoodie",
+    "category_score": 0.5871282815933228,
     "color": "black",
-    "style": "streetwear",
+    "color_score": 0.43064746260643005,
+    "styles": [
+      {
+        "label": "streetwear",
+        "score": 0.7664455771446228
+      },
+      {
+        "label": "casual",
+        "score": 0.09993356466293335
+      },
+      {
+        "label": "minimalist",
+        "score": 0.06137862056493759
+      }
+    ],
+    "primary_style": "streetwear",
+    "pattern": "graphic",
+    "pattern_score": 0.9110068082809448,
     "hash": "0319fd1b1e811a716e0184ecdc75d3f6"
   },
   {
-    "image": "jacket-black-streetwear-0319fd1b.jpeg",
+    "image": "jacket-navy-streetwear-minimalist-b04c3035.jpeg",
     "category": "jacket",
-    "color": "black",
-    "style": "streetwear",
-    "hash": "0319fd1b1e811a716e0184ecdc75d3f6"
-  },
-  {
-    "image": "jacket-navy-streetwear-b04c3035.jpeg",
-    "category": "jacket",
+    "category_score": 0.9916706085205078,
     "color": "navy",
-    "style": "streetwear",
+    "color_score": 0.6213300824165344,
+    "styles": [
+      {
+        "label": "streetwear",
+        "score": 0.6975696086883545
+      },
+      {
+        "label": "minimalist",
+        "score": 0.07591985166072845
+      },
+      {
+        "label": "old_money",
+        "score": 0.06639476865530014
+      }
+    ],
+    "primary_style": "streetwear",
+    "pattern": "graphic",
+    "pattern_score": 0.7584231495857239,
     "hash": "b04c30353793aac10481fe100bde1b16"
   },
   {
-    "image": "jacket-navy-streetwear-b04c3035.jpeg",
-    "category": "jacket",
-    "color": "navy",
-    "style": "streetwear",
-    "hash": "b04c30353793aac10481fe100bde1b16"
-  },
-  {
-    "image": "joggers-black-sportswear-e07668bb.jpeg",
+    "image": "joggers-navy-athletic-minimalist-e07668bb.jpeg",
     "category": "joggers",
-    "color": "black",
-    "style": "sportswear",
+    "category_score": 0.8348997831344604,
+    "color": "navy",
+    "color_score": 0.4475037753582001,
+    "styles": [
+      {
+        "label": "athletic",
+        "score": 0.9623173475265503
+      },
+      {
+        "label": "minimalist",
+        "score": 0.01184240635484457
+      },
+      {
+        "label": "casual",
+        "score": 0.010259466245770454
+      }
+    ],
+    "primary_style": "athletic",
+    "pattern": "graphic",
+    "pattern_score": 0.45600029826164246,
     "hash": "e07668bb0b22ae57a5f549492db841f8"
   },
   {
-    "image": "joggers-black-sportswear-e07668bb.jpeg",
-    "category": "joggers",
-    "color": "black",
-    "style": "sportswear",
-    "hash": "e07668bb0b22ae57a5f549492db841f8"
-  },
-  {
-    "image": "joggers-brown-sportswear-47e8298e.jpeg",
-    "category": "joggers",
+    "image": "polo-brown-casual-minimalist-47e8298e.jpeg",
+    "category": "polo",
+    "category_score": 0.7045749425888062,
     "color": "brown",
-    "style": "sportswear",
+    "color_score": 0.2960239350795746,
+    "styles": [
+      {
+        "label": "casual",
+        "score": 0.360355019569397
+      },
+      {
+        "label": "minimalist",
+        "score": 0.195051372051239
+      },
+      {
+        "label": "athletic",
+        "score": 0.1690935492515564
+      }
+    ],
+    "primary_style": "casual",
+    "pattern": "checked",
+    "pattern_score": 0.3940473198890686,
     "hash": "47e8298e8c4e702ba098b780afc8fc85"
   },
   {
-    "image": "joggers-brown-sportswear-47e8298e.jpeg",
+    "image": "joggers-navy-athletic-streetwear-b16ae69f.jpeg",
     "category": "joggers",
-    "color": "brown",
-    "style": "sportswear",
-    "hash": "47e8298e8c4e702ba098b780afc8fc85"
-  },
-  {
-    "image": "joggers-navy-sportswear-b16ae69f.jpeg",
-    "category": "joggers",
+    "category_score": 0.9378069043159485,
     "color": "navy",
-    "style": "sportswear",
+    "color_score": 0.4887079894542694,
+    "styles": [
+      {
+        "label": "athletic",
+        "score": 0.8356306552886963
+      },
+      {
+        "label": "streetwear",
+        "score": 0.061595767736434937
+      },
+      {
+        "label": "casual",
+        "score": 0.056917790323495865
+      }
+    ],
+    "primary_style": "athletic",
+    "pattern": "graphic",
+    "pattern_score": 0.5969337821006775,
     "hash": "b16ae69feb48b848990256c00b0a16da"
   },
   {
-    "image": "joggers-navy-sportswear-b16ae69f.jpeg",
-    "category": "joggers",
-    "color": "navy",
-    "style": "sportswear",
-    "hash": "b16ae69feb48b848990256c00b0a16da"
-  },
-  {
-    "image": "joggers-white-streetwear-169d9043.jpeg",
-    "category": "joggers",
-    "color": "white",
-    "style": "streetwear",
+    "image": "hoodie-blue-minimalist-athletic-169d9043.jpeg",
+    "category": "hoodie",
+    "category_score": 0.3942066431045532,
+    "color": "blue",
+    "color_score": 0.19702404737472534,
+    "styles": [
+      {
+        "label": "minimalist",
+        "score": 0.7752282023429871
+      },
+      {
+        "label": "athletic",
+        "score": 0.10801264643669128
+      },
+      {
+        "label": "streetwear",
+        "score": 0.04525936394929886
+      }
+    ],
+    "primary_style": "minimalist",
+    "pattern": "solid",
+    "pattern_score": 0.7381018400192261,
     "hash": "169d904336df4c730f42990430727917"
   },
   {
-    "image": "joggers-white-streetwear-169d9043.jpeg",
-    "category": "joggers",
-    "color": "white",
-    "style": "streetwear",
-    "hash": "169d904336df4c730f42990430727917"
-  },
-  {
-    "image": "joggers-white-streetwear-9d1f8a6a.jpeg",
-    "category": "joggers",
-    "color": "white",
-    "style": "streetwear",
+    "image": "hoodie-blue-minimalist-athletic-9d1f8a6a.jpeg",
+    "category": "hoodie",
+    "category_score": 0.40191274881362915,
+    "color": "blue",
+    "color_score": 0.21741674840450287,
+    "styles": [
+      {
+        "label": "minimalist",
+        "score": 0.8356626629829407
+      },
+      {
+        "label": "athletic",
+        "score": 0.08111017942428589
+      },
+      {
+        "label": "streetwear",
+        "score": 0.031943950802087784
+      }
+    ],
+    "primary_style": "minimalist",
+    "pattern": "solid",
+    "pattern_score": 0.6885730624198914,
     "hash": "9d1f8a6aeba3c9a86bd8f8361bf5f32e"
   },
   {
-    "image": "joggers-white-streetwear-9d1f8a6a.jpeg",
-    "category": "joggers",
-    "color": "white",
-    "style": "streetwear",
-    "hash": "9d1f8a6aeba3c9a86bd8f8361bf5f32e"
-  },
-  {
-    "image": "pants-beige-formal-8c5f4cb3.jpeg",
-    "category": "pants",
-    "color": "beige",
-    "style": "formal",
+    "image": "trousers-cream-minimalist-casual-8c5f4cb3.jpeg",
+    "category": "trousers",
+    "category_score": 0.991965651512146,
+    "color": "cream",
+    "color_score": 0.45186617970466614,
+    "styles": [
+      {
+        "label": "minimalist",
+        "score": 0.3198055624961853
+      },
+      {
+        "label": "casual",
+        "score": 0.1885879635810852
+      },
+      {
+        "label": "smart_casual",
+        "score": 0.15226159989833832
+      }
+    ],
+    "primary_style": "minimalist",
+    "pattern": "textured",
+    "pattern_score": 0.5927484631538391,
     "hash": "8c5f4cb34e30252f30a81ac896744311"
   },
   {
-    "image": "pants-beige-formal-8c5f4cb3.jpeg",
-    "category": "pants",
+    "image": "trousers-navy-minimalist-casual-4c3c3893.jpeg",
+    "category": "trousers",
+    "category_score": 0.8951918482780457,
+    "color": "navy",
+    "color_score": 0.33891358971595764,
+    "styles": [
+      {
+        "label": "minimalist",
+        "score": 0.35207614302635193
+      },
+      {
+        "label": "casual",
+        "score": 0.2603663504123688
+      },
+      {
+        "label": "smart_casual",
+        "score": 0.13077765703201294
+      }
+    ],
+    "primary_style": "minimalist",
+    "pattern": "textured",
+    "pattern_score": 0.5322828888893127,
+    "hash": "4c3c38938d101667dd884e8afd33bfb3"
+  },
+  {
+    "image": "shorts-black-athletic-minimalist-8a2e584d.jpeg",
+    "category": "shorts",
+    "category_score": 0.6462796926498413,
+    "color": "black",
+    "color_score": 0.30888253450393677,
+    "styles": [
+      {
+        "label": "athletic",
+        "score": 0.5235602259635925
+      },
+      {
+        "label": "minimalist",
+        "score": 0.2565551698207855
+      },
+      {
+        "label": "casual",
+        "score": 0.07492244243621826
+      }
+    ],
+    "primary_style": "athletic",
+    "pattern": "textured",
+    "pattern_score": 0.7174674868583679,
+    "hash": "8a2e584d1f5acbc112d16a03e598f9f4"
+  },
+  {
+    "image": "trousers-black-minimalist-casual-9593fb59.jpeg",
+    "category": "trousers",
+    "category_score": 0.9890118837356567,
+    "color": "black",
+    "color_score": 0.4762323498725891,
+    "styles": [
+      {
+        "label": "minimalist",
+        "score": 0.4113324284553528
+      },
+      {
+        "label": "casual",
+        "score": 0.2668435275554657
+      },
+      {
+        "label": "athletic",
+        "score": 0.0846039354801178
+      }
+    ],
+    "primary_style": "minimalist",
+    "pattern": "textured",
+    "pattern_score": 0.6149552464485168,
+    "hash": "9593fb59e9c6410b2efcf28ffa7804a7"
+  },
+  {
+    "image": "trousers-brown-casual-minimalist-aa2301b0.jpeg",
+    "category": "trousers",
+    "category_score": 0.9670431613922119,
+    "color": "brown",
+    "color_score": 0.738430917263031,
+    "styles": [
+      {
+        "label": "casual",
+        "score": 0.3977583646774292
+      },
+      {
+        "label": "minimalist",
+        "score": 0.1904621720314026
+      },
+      {
+        "label": "formal",
+        "score": 0.1234065443277359
+      }
+    ],
+    "primary_style": "casual",
+    "pattern": "solid",
+    "pattern_score": 0.535128653049469,
+    "hash": "aa2301b040fdaab4c0ba205b68cf5f8c"
+  },
+  {
+    "image": "jeans-light-blue-casual-minimalist-8259b730.jpeg",
+    "category": "jeans",
+    "category_score": 0.7818348407745361,
+    "color": "light blue",
+    "color_score": 0.512300968170166,
+    "styles": [
+      {
+        "label": "casual",
+        "score": 0.41725820302963257
+      },
+      {
+        "label": "minimalist",
+        "score": 0.37683627009391785
+      },
+      {
+        "label": "old_money",
+        "score": 0.07763800024986267
+      }
+    ],
+    "primary_style": "casual",
+    "pattern": "solid",
+    "pattern_score": 0.5435594916343689,
+    "hash": "8259b7302a6990382564c42f0b9808d4"
+  },
+  {
+    "image": "trousers-cream-casual-minimalist-8c1032cb.jpeg",
+    "category": "trousers",
+    "category_score": 0.9932833909988403,
+    "color": "cream",
+    "color_score": 0.3713882863521576,
+    "styles": [
+      {
+        "label": "casual",
+        "score": 0.27246004343032837
+      },
+      {
+        "label": "minimalist",
+        "score": 0.1785358190536499
+      },
+      {
+        "label": "old_money",
+        "score": 0.1516772210597992
+      }
+    ],
+    "primary_style": "casual",
+    "pattern": "textured",
+    "pattern_score": 0.6069044470787048,
+    "hash": "8c1032cbc9e0cacb2afa09ed84781c41"
+  },
+  {
+    "image": "trousers-white-minimalist-athletic-5ae1c431.jpeg",
+    "category": "trousers",
+    "category_score": 0.8024407625198364,
+    "color": "white",
+    "color_score": 0.8052704930305481,
+    "styles": [
+      {
+        "label": "minimalist",
+        "score": 0.4879690706729889
+      },
+      {
+        "label": "athletic",
+        "score": 0.17219571769237518
+      },
+      {
+        "label": "casual",
+        "score": 0.15919002890586853
+      }
+    ],
+    "primary_style": "minimalist",
+    "pattern": "textured",
+    "pattern_score": 0.6998762488365173,
+    "hash": "5ae1c43158dd8eb256f236c387cbab2a"
+  },
+  {
+    "image": "t-shirt-black-streetwear-formal-3d2a37aa.jpeg",
+    "category": "t-shirt",
+    "category_score": 0.9862509965896606,
+    "color": "black",
+    "color_score": 0.6726154088973999,
+    "styles": [
+      {
+        "label": "streetwear",
+        "score": 0.5397168397903442
+      },
+      {
+        "label": "formal",
+        "score": 0.13228273391723633
+      },
+      {
+        "label": "athletic",
+        "score": 0.1094280406832695
+      }
+    ],
+    "primary_style": "streetwear",
+    "pattern": "graphic",
+    "pattern_score": 0.9896948337554932,
+    "hash": "3d2a37aa43c5102a14cdaa13bd25ee13"
+  },
+  {
+    "image": "t-shirt-navy-athletic-formal-766b0175.jpeg",
+    "category": "t-shirt",
+    "category_score": 0.9465607404708862,
+    "color": "navy",
+    "color_score": 0.3334767520427704,
+    "styles": [
+      {
+        "label": "athletic",
+        "score": 0.7936351299285889
+      },
+      {
+        "label": "formal",
+        "score": 0.0906442254781723
+      },
+      {
+        "label": "streetwear",
+        "score": 0.0562267005443573
+      }
+    ],
+    "primary_style": "athletic",
+    "pattern": "graphic",
+    "pattern_score": 0.844882607460022,
+    "hash": "766b0175d4625cc98ba1ea4722d3c18a"
+  },
+  {
+    "image": "shirt-khaki-streetwear-minimalist-66b5a4a3.jpeg",
+    "category": "shirt",
+    "category_score": 0.8067312240600586,
+    "color": "khaki",
+    "color_score": 0.24712379276752472,
+    "styles": [
+      {
+        "label": "streetwear",
+        "score": 0.35003626346588135
+      },
+      {
+        "label": "minimalist",
+        "score": 0.20907920598983765
+      },
+      {
+        "label": "casual",
+        "score": 0.13881875574588776
+      }
+    ],
+    "primary_style": "streetwear",
+    "pattern": "graphic",
+    "pattern_score": 0.9733143448829651,
+    "hash": "66b5a4a3fa14dc3ea898c621526a5e65"
+  },
+  {
+    "image": "shirt-navy-casual-minimalist-ffd9f0b6.jpeg",
+    "category": "shirt",
+    "category_score": 0.8242120146751404,
+    "color": "navy",
+    "color_score": 0.7921130657196045,
+    "styles": [
+      {
+        "label": "casual",
+        "score": 0.23505380749702454
+      },
+      {
+        "label": "minimalist",
+        "score": 0.22491149604320526
+      },
+      {
+        "label": "formal",
+        "score": 0.17805545032024384
+      }
+    ],
+    "primary_style": "casual",
+    "pattern": "graphic",
+    "pattern_score": 0.9412932991981506,
+    "hash": "ffd9f0b696c494de86f8a7384adc061c"
+  },
+  {
+    "image": "polo-navy-old-money-casual-189d5cd9.jpeg",
+    "category": "polo",
+    "category_score": 0.559721052646637,
+    "color": "navy",
+    "color_score": 0.9278120994567871,
+    "styles": [
+      {
+        "label": "old_money",
+        "score": 0.417803555727005
+      },
+      {
+        "label": "casual",
+        "score": 0.21113650500774384
+      },
+      {
+        "label": "formal",
+        "score": 0.09139443188905716
+      }
+    ],
+    "primary_style": "old_money",
+    "pattern": "striped",
+    "pattern_score": 0.9143081307411194,
+    "hash": "189d5cd9b53f9ac46d453d432521d02f"
+  },
+  {
+    "image": "shirt-beige-old-money-minimalist-4144c237.jpeg",
+    "category": "shirt",
+    "category_score": 0.5919221639633179,
     "color": "beige",
-    "style": "formal",
-    "hash": "8c5f4cb34e30252f30a81ac896744311"
-  },
-  {
-    "image": "pants-black-sportswear-4c3c3893.jpeg",
-    "category": "pants",
-    "color": "black",
-    "style": "sportswear",
-    "hash": "4c3c38938d101667dd884e8afd33bfb3"
-  },
-  {
-    "image": "pants-black-sportswear-4c3c3893.jpeg",
-    "category": "pants",
-    "color": "black",
-    "style": "sportswear",
-    "hash": "4c3c38938d101667dd884e8afd33bfb3"
-  },
-  {
-    "image": "pants-black-sportswear-8a2e584d.jpeg",
-    "category": "pants",
-    "color": "black",
-    "style": "sportswear",
-    "hash": "8a2e584d1f5acbc112d16a03e598f9f4"
-  },
-  {
-    "image": "pants-black-sportswear-8a2e584d.jpeg",
-    "category": "pants",
-    "color": "black",
-    "style": "sportswear",
-    "hash": "8a2e584d1f5acbc112d16a03e598f9f4"
-  },
-  {
-    "image": "pants-black-sportswear-9593fb59.jpeg",
-    "category": "pants",
-    "color": "black",
-    "style": "sportswear",
-    "hash": "9593fb59e9c6410b2efcf28ffa7804a7"
-  },
-  {
-    "image": "pants-black-sportswear-9593fb59.jpeg",
-    "category": "pants",
-    "color": "black",
-    "style": "sportswear",
-    "hash": "9593fb59e9c6410b2efcf28ffa7804a7"
-  },
-  {
-    "image": "pants-brown-sportswear-aa2301b0.jpeg",
-    "category": "pants",
-    "color": "brown",
-    "style": "sportswear",
-    "hash": "aa2301b040fdaab4c0ba205b68cf5f8c"
-  },
-  {
-    "image": "pants-brown-sportswear-aa2301b0.jpeg",
-    "category": "pants",
-    "color": "brown",
-    "style": "sportswear",
-    "hash": "aa2301b040fdaab4c0ba205b68cf5f8c"
-  },
-  {
-    "image": "pants-white-casual-8259b730.jpeg",
-    "category": "pants",
-    "color": "white",
-    "style": "casual",
-    "hash": "8259b7302a6990382564c42f0b9808d4"
-  },
-  {
-    "image": "pants-white-casual-8259b730.jpeg",
-    "category": "pants",
-    "color": "white",
-    "style": "casual",
-    "hash": "8259b7302a6990382564c42f0b9808d4"
-  },
-  {
-    "image": "pants-white-old-money-8c1032cb.jpeg",
-    "category": "pants",
-    "color": "white",
-    "style": "old money",
-    "hash": "8c1032cbc9e0cacb2afa09ed84781c41"
-  },
-  {
-    "image": "pants-white-old-money-8c1032cb.jpeg",
-    "category": "pants",
-    "color": "white",
-    "style": "old money",
-    "hash": "8c1032cbc9e0cacb2afa09ed84781c41"
-  },
-  {
-    "image": "pants-white-sportswear-5ae1c431.jpeg",
-    "category": "pants",
-    "color": "white",
-    "style": "sportswear",
-    "hash": "5ae1c43158dd8eb256f236c387cbab2a"
-  },
-  {
-    "image": "pants-white-sportswear-5ae1c431.jpeg",
-    "category": "pants",
-    "color": "white",
-    "style": "sportswear",
-    "hash": "5ae1c43158dd8eb256f236c387cbab2a"
-  },
-  {
-    "image": "shirt-black-formal-3d2a37aa.jpeg",
-    "category": "shirt",
-    "color": "black",
-    "style": "formal",
-    "hash": "3d2a37aa43c5102a14cdaa13bd25ee13"
-  },
-  {
-    "image": "shirt-black-formal-3d2a37aa.jpeg",
-    "category": "shirt",
-    "color": "black",
-    "style": "formal",
-    "hash": "3d2a37aa43c5102a14cdaa13bd25ee13"
-  },
-  {
-    "image": "shirt-black-sportswear-766b0175.jpeg",
-    "category": "shirt",
-    "color": "black",
-    "style": "sportswear",
-    "hash": "766b0175d4625cc98ba1ea4722d3c18a"
-  },
-  {
-    "image": "shirt-black-sportswear-766b0175.jpeg",
-    "category": "shirt",
-    "color": "black",
-    "style": "sportswear",
-    "hash": "766b0175d4625cc98ba1ea4722d3c18a"
-  },
-  {
-    "image": "shirt-navy-formal-66b5a4a3.jpeg",
-    "category": "shirt",
-    "color": "navy",
-    "style": "formal",
-    "hash": "66b5a4a3fa14dc3ea898c621526a5e65"
-  },
-  {
-    "image": "shirt-navy-formal-66b5a4a3.jpeg",
-    "category": "shirt",
-    "color": "navy",
-    "style": "formal",
-    "hash": "66b5a4a3fa14dc3ea898c621526a5e65"
-  },
-  {
-    "image": "shirt-navy-formal-ffd9f0b6.jpeg",
-    "category": "shirt",
-    "color": "navy",
-    "style": "formal",
-    "hash": "ffd9f0b696c494de86f8a7384adc061c"
-  },
-  {
-    "image": "shirt-navy-formal-ffd9f0b6.jpeg",
-    "category": "shirt",
-    "color": "navy",
-    "style": "formal",
-    "hash": "ffd9f0b696c494de86f8a7384adc061c"
-  },
-  {
-    "image": "shirt-navy-preppy-189d5cd9.jpeg",
-    "category": "shirt",
-    "color": "navy",
-    "style": "preppy",
-    "hash": "189d5cd9b53f9ac46d453d432521d02f"
-  },
-  {
-    "image": "shirt-navy-preppy-189d5cd9.jpeg",
-    "category": "shirt",
-    "color": "navy",
-    "style": "preppy",
-    "hash": "189d5cd9b53f9ac46d453d432521d02f"
-  },
-  {
-    "image": "shirt-white-preppy-4144c237.jpeg",
-    "category": "shirt",
-    "color": "white",
-    "style": "preppy",
+    "color_score": 0.2611549496650696,
+    "styles": [
+      {
+        "label": "old_money",
+        "score": 0.36252379417419434
+      },
+      {
+        "label": "minimalist",
+        "score": 0.2680455148220062
+      },
+      {
+        "label": "casual",
+        "score": 0.18711985647678375
+      }
+    ],
+    "primary_style": "old_money",
+    "pattern": "striped",
+    "pattern_score": 0.495851993560791,
     "hash": "4144c2379601bac9ef8124b3d423d32b"
   },
   {
-    "image": "shirt-white-preppy-4144c237.jpeg",
+    "image": "shirt-light-blue-casual-formal-7ed9fad3.jpeg",
     "category": "shirt",
-    "color": "white",
-    "style": "preppy",
-    "hash": "4144c2379601bac9ef8124b3d423d32b"
-  },
-  {
-    "image": "shirt-white-preppy-7ed9fad3.jpeg",
-    "category": "shirt",
-    "color": "white",
-    "style": "preppy",
+    "category_score": 0.9971195459365845,
+    "color": "light blue",
+    "color_score": 0.8021364212036133,
+    "styles": [
+      {
+        "label": "casual",
+        "score": 0.28236135840415955
+      },
+      {
+        "label": "formal",
+        "score": 0.2244509756565094
+      },
+      {
+        "label": "smart_casual",
+        "score": 0.19026285409927368
+      }
+    ],
+    "primary_style": "casual",
+    "pattern": "solid",
+    "pattern_score": 0.6937233209609985,
     "hash": "7ed9fad394b86f5ff7a8277182ab4e0a"
   },
   {
-    "image": "shirt-white-preppy-7ed9fad3.jpeg",
+    "image": "shirt-light-blue-casual-minimalist-e034106a.jpeg",
     "category": "shirt",
-    "color": "white",
-    "style": "preppy",
-    "hash": "7ed9fad394b86f5ff7a8277182ab4e0a"
-  },
-  {
-    "image": "shirt-white-preppy-e034106a.jpeg",
-    "category": "shirt",
-    "color": "white",
-    "style": "preppy",
+    "category_score": 0.9962598085403442,
+    "color": "light blue",
+    "color_score": 0.8163104057312012,
+    "styles": [
+      {
+        "label": "casual",
+        "score": 0.48476842045783997
+      },
+      {
+        "label": "minimalist",
+        "score": 0.1671028882265091
+      },
+      {
+        "label": "smart_casual",
+        "score": 0.11330018937587738
+      }
+    ],
+    "primary_style": "casual",
+    "pattern": "solid",
+    "pattern_score": 0.6006639003753662,
     "hash": "e034106aab62f0e581aeeb252e3b174d"
   },
   {
-    "image": "shirt-white-preppy-e034106a.jpeg",
-    "category": "shirt",
-    "color": "white",
-    "style": "preppy",
-    "hash": "e034106aab62f0e581aeeb252e3b174d"
-  },
-  {
-    "image": "shirt-white-sportswear-6c6bc4fa.jpeg",
-    "category": "shirt",
-    "color": "white",
-    "style": "sportswear",
+    "image": "polo-burgundy-athletic-minimalist-6c6bc4fa.jpeg",
+    "category": "polo",
+    "category_score": 0.6967406272888184,
+    "color": "burgundy",
+    "color_score": 0.9330119490623474,
+    "styles": [
+      {
+        "label": "athletic",
+        "score": 0.5808106660842896
+      },
+      {
+        "label": "minimalist",
+        "score": 0.23328304290771484
+      },
+      {
+        "label": "casual",
+        "score": 0.06373675912618637
+      }
+    ],
+    "primary_style": "athletic",
+    "pattern": "graphic",
+    "pattern_score": 0.5292762517929077,
     "hash": "6c6bc4fa60a92bbd4742e833f13f368a"
   },
   {
-    "image": "shirt-white-sportswear-6c6bc4fa.jpeg",
-    "category": "shirt",
+    "image": "t-shirt-white-minimalist-streetwear-82e1501b.jpeg",
+    "category": "t-shirt",
+    "category_score": 0.800625205039978,
     "color": "white",
-    "style": "sportswear",
-    "hash": "6c6bc4fa60a92bbd4742e833f13f368a"
-  },
-  {
-    "image": "shirt-white-sportswear-82e1501b.jpeg",
-    "category": "shirt",
-    "color": "white",
-    "style": "sportswear",
-    "hash": "82e1501b0e1bd1b06ddad983fbf885a3"
-  },
-  {
-    "image": "shirt-white-sportswear-82e1501b.jpeg",
-    "category": "shirt",
-    "color": "white",
-    "style": "sportswear",
+    "color_score": 0.5471253395080566,
+    "styles": [
+      {
+        "label": "minimalist",
+        "score": 0.6663326025009155
+      },
+      {
+        "label": "streetwear",
+        "score": 0.11906193941831589
+      },
+      {
+        "label": "casual",
+        "score": 0.07546070218086243
+      }
+    ],
+    "primary_style": "minimalist",
+    "pattern": "graphic",
+    "pattern_score": 0.36100319027900696,
     "hash": "82e1501b0e1bd1b06ddad983fbf885a3"
   }
 ]

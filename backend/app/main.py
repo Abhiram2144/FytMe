@@ -73,8 +73,8 @@ async def startup_event():
             print(f"✅ Indexed {len(catalog)} clothing items")
         
         print("\n📦 Initializing recommender with catalog...")
-        get_recommender(catalog)
-        print("✅ Recommender ready")
+        recommender = get_recommender(catalog)
+        print(f"✅ Recommender ready with {len(recommender.catalog)} items")
         
     except Exception as e:
         print(f"⚠️  Warning: Initialization error: {e}")

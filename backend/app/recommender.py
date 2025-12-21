@@ -156,6 +156,16 @@ class FashionRecommender:
         
         print(f"📊 Available: {len(tops)} tops, {len(bottoms)} bottoms, {len(shoes_items)} shoes")
         
+        # ========================================================
+        # STEP 2.5: ENFORCE FORMALITY RULES (if needed)
+        # ========================================================
+        # For formal/dress occasions, restrict to appropriate categories
+        if preferred_style.lower() == "formal":
+            # Formal requires dress shirts (not t-shirts) and trousers (not jeans/joggers)
+            tops = [item for item in tops if item.get("category", "").lower() in ["shirt", "polo"]]
+            bottoms = [item for item in bottoms if item.get("category", "").lower() in ["trousers"]]
+            print(f"   (Formal dress code applied) → {len(tops)} tops, {len(bottoms)} bottoms")
+        
         if len(tops) == 0 or len(bottoms) == 0:
             print("⚠️  Insufficient items to create outfits (need at least 1 top and 1 bottom)")
             return []
@@ -249,24 +259,34 @@ class FashionRecommender:
         Uses CLIP's style distribution (already computed during indexing).
         Each item has a "styles" field with [{"label": str, "score": float}, ...]
         
+        PRIORITY:
+        1. If item's primary_style == target_style, boost score significantly
+        2. Otherwise, use style_affinity from styles distribution
+        3. If target style not found anywhere, use penalty (0.05)
+        
         Returns:
             List of items with added "style_affinity" field
         """
         scored_items = []
         
         for item in items:
+            primary_style = item.get("primary_style", "casual")
             styles_dist = item.get("styles", [])
             
-            # Find score for target style
-            style_affinity = 0.0
-            for style_entry in styles_dist:
-                if style_entry["label"] == target_style:
-                    style_affinity = style_entry["score"]
-                    break
-            
-            # If target style not in top-k, give it a small default score
-            if style_affinity == 0.0:
-                style_affinity = 0.1
+            # PRIORITY 1: Primary style match gets highest boost
+            if primary_style == target_style:
+                style_affinity = 1.0  # Perfect match
+            else:
+                # PRIORITY 2: Look for target style in full distribution
+                style_affinity = 0.0
+                for style_entry in styles_dist:
+                    if style_entry["label"] == target_style:
+                        style_affinity = style_entry["score"]
+                        break
+                
+                # PRIORITY 3: If target style not found, penalty
+                if style_affinity == 0.0:
+                    style_affinity = 0.05  # Lower penalty for missing style
             
             scored_items.append({
                 **item,
@@ -394,44 +414,64 @@ class FashionRecommender:
         """
         Select diverse outfits from candidates.
         
-        Diversity constraints:
-        1. No duplicate (top_color, bottom_color) pairs
-        2. No repeated items across outfits
+        Strategy:
+        1) First pass: prefer unique (top_color, bottom_color) pairs and avoid item reuse
+        2) If fewer than num_outfits selected: second pass fills remaining slots
+           allowing repeated color pairs but still avoiding item reuse
         
-        RULES enforce diversity, not CLIP.
+        This ensures we return up to num_outfits even when the catalog
+        has limited color variety.
         """
-        selected = []
+        selected: List[Dict] = []
         seen_color_pairs: Set[Tuple[str, str]] = set()
         used_top_images: Set[str] = set()
         used_bottom_images: Set[str] = set()
-        
+
+        # First pass: enforce unique color pairs
         for candidate in outfit_candidates:
             if len(selected) >= num_outfits:
                 break
-            
+
             top = candidate["top"]
             bottom = candidate["bottom"]
-            
-            top_color = top["color"]
-            bottom_color = bottom["color"]
-            color_pair = (top_color, bottom_color)
-            
-            # Check uniqueness
+
+            color_pair = (top["color"], bottom["color"]) 
+
             if color_pair in seen_color_pairs:
                 continue
-            
             if top["image"] in used_top_images:
                 continue
-            
             if bottom["image"] in used_bottom_images:
                 continue
-            
-            # Add to selected
+
             selected.append(candidate)
             seen_color_pairs.add(color_pair)
             used_top_images.add(top["image"])
             used_bottom_images.add(bottom["image"])
-        
+
+        # Second pass: if we still need more, relax color-pair uniqueness
+        if len(selected) < num_outfits:
+            for candidate in outfit_candidates:
+                if len(selected) >= num_outfits:
+                    break
+
+                # Skip ones already selected
+                if candidate in selected:
+                    continue
+
+                top = candidate["top"]
+                bottom = candidate["bottom"]
+
+                # Still avoid reusing the exact same items
+                if top["image"] in used_top_images:
+                    continue
+                if bottom["image"] in used_bottom_images:
+                    continue
+
+                selected.append(candidate)
+                used_top_images.add(top["image"])
+                used_bottom_images.add(bottom["image"])
+
         return selected
     
     
@@ -485,9 +525,16 @@ class FashionRecommender:
 # Global singleton
 _recommender = None
 
-def get_recommender() -> FashionRecommender:
-    """Get or create global recommender instance."""
+def get_recommender(catalog: List[Dict] = None) -> FashionRecommender:
+    """Get or create global recommender instance.
+    
+    Args:
+        catalog: Optional catalog to initialize/update recommender.
+                 If provided and recommender exists, updates the catalog.
+    """
     global _recommender
     if _recommender is None:
-        _recommender = FashionRecommender()
+        _recommender = FashionRecommender(catalog if catalog else [])
+    elif catalog is not None:
+        _recommender.update_catalog(catalog)
     return _recommender
