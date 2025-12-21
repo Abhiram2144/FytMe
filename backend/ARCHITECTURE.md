@@ -1,342 +1,263 @@
-# Backend Architecture
+# Fashion Recommendation System Architecture
 
-## System Overview
+## Philosophy: Rules Enforce Reality, CLIP Ranks Within Constraints
 
-The Fashion Recommendation Backend is a modular, ML-powered API service that provides personalized outfit recommendations based on skin tone analysis and style preferences.
+This system implements a **hybrid rule-based + ML ranking** approach to fashion recommendations, treating CLIP as a **similarity ranking engine**, not a classifier.
 
-## Architecture Diagram
+---
+
+## Core Principles
+
+### 1. **CLIP's Role: Ranking, Not Classification**
+- ❌ **CLIP is NOT** a ground truth classifier
+- ❌ **CLIP is NOT** a single-label decider
+- ✅ **CLIP IS** a semantic similarity ranking engine
+- ✅ **CLIP IS** a provider of top-k confidence distributions
+
+### 2. **Rules > CLIP**
+- Hard constraints are enforced by domain rules (fashion_knowledge.py)
+- CLIP ranks options **within** those constraints
+- CLIP never overrides skin tone suitability or style compatibility rules
+
+### 3. **Separate Embedding Spaces**
+- Each attribute (category, color, style, pattern) has its own prompt space
+- Attributes are inferred **independently**
+- No mixed prompts like "blue formal shirt" (antipattern)
+
+---
+
+## System Architecture
+
+### Phase 1: Indexing (image_indexer.py)
 
 ```
-┌─────────────────────────────────────────────────────────────┐
-│                     FastAPI Application                      │
-│                        (main.py)                             │
-└────────────┬────────────────────────────────────────────────┘
-             │
-             ├──► CORS Middleware (Frontend Integration)
-             │
-             └──► API Router (api.py)
-                      │
-                      ├──► POST /api/analyze-skin-tone
-                      │         │
-                      │         └──► skin_tone.py
-                      │              ├─► OpenCV (Face Detection)
-                      │              ├─► HSV Color Extraction
-                      │              └─► Fitzpatrick Mapping
-                      │
-                      ├──► POST /api/recommend-outfits
-                      │         │
-                      │         └──► recommender.py
-                      │              ├─► Filter by Style & Color
-                      │              ├─► CLIP Similarity Scoring
-                      │              ├─► Outfit Assembly Logic
-                      │              └─► Explanation Generation
-                      │
-                      ├──► GET /api/styles
-                      └──► GET /api/health
-
-┌─────────────────────────────────────────────────────────────┐
-│                    Supporting Modules                        │
-└─────────────────────────────────────────────────────────────┘
-
-config.py                 clip_utils.py              Data Layer
-├─ Skin tone mappings    ├─ CLIP model loader       ├─ clothes_metadata.csv
-├─ Style categories      ├─ Text embeddings         └─ (88+ items)
-├─ Color harmony rules   ├─ Similarity computation
-└─ Scoring weights       └─ Semantic ranking
+Image → CLIP Encoder → Separate Ranking for Each Attribute
+  ↓
+  Category Ranking (top-1 with confidence)
+  Color Ranking (top-1 with confidence)
+  Style Ranking (top-3 distribution)
+  Pattern Ranking (top-1 with confidence)
+  ↓
+  Store as multi-attribute item with distributions
 ```
 
-## Component Details
+**Key Innovation:**
+- Styles are **multi-label distributions**, not single labels
+- Example: `{"formal": 0.72, "old_money": 0.68, "minimalist": 0.45}`
 
-### 1. Entry Point (`main.py`)
-- **Purpose**: FastAPI application initialization
-- **Responsibilities**:
-  - Configure CORS for frontend
-  - Register API routes
-  - Pre-load models on startup
-  - Health monitoring
-- **Key Features**:
-  - Singleton pattern for model instances
-  - Graceful startup/shutdown
-  - Comprehensive logging
+### Phase 2: Recommendation (recommender.py)
 
-### 2. API Layer (`api.py`)
-- **Purpose**: REST API endpoint definitions
-- **Endpoints**:
-  1. `POST /api/analyze-skin-tone`: Upload selfie, get Fitzpatrick type
-  2. `POST /api/recommend-outfits`: Get 3 outfit recommendations
-  3. `GET /api/styles`: List available style categories
-  4. `GET /api/health`: Service health check
-- **Features**:
-  - Pydantic models for validation
-  - Comprehensive error handling
-  - OpenAPI documentation
-
-### 3. Skin Tone Detection (`skin_tone.py`)
-- **Purpose**: Analyze selfie images for skin tone
-- **Algorithm**:
-  ```
-  1. Load image bytes
-  2. Detect face using Haar Cascade
-  3. Extract skin pixels (HSV filtering)
-  4. Compute average color (LAB space)
-  5. Map luminance to Fitzpatrick (I-VI)
-  ```
-- **Fallback**: Uses center region if no face detected
-- **Output**: Fitzpatrick type + human-readable label
-
-### 4. CLIP Utilities (`clip_utils.py`)
-- **Purpose**: Semantic similarity using OpenAI CLIP
-- **Model**: ViT-B/32 (pretrained)
-- **Operations**:
-  - Text embedding generation
-  - Cosine similarity computation
-  - Semantic ranking
-- **Optimization**: LRU caching for frequent queries
-- **No Training**: Uses pretrained weights only
-
-### 5. Recommendation Engine (`recommender.py`)
-- **Purpose**: Core recommendation logic
-- **Algorithm**:
-  ```
-  1. Load clothing metadata (CSV)
-  2. Filter by category (top/bottom/shoes)
-  3. Score items:
-     - Style match (40%)
-     - Color compatibility (30%)
-     - CLIP similarity (20%)
-     - Data quality (10%)
-  4. Assemble outfits
-  5. Apply color harmony bonus
-  6. Diversify results
-  7. Generate explanations
-  ```
-- **Output**: Top 3 outfits with scores and explanations
-
-### 6. Configuration (`config.py`)
-- **Purpose**: Centralized configuration
-- **Contains**:
-  - Fitzpatrick → color mappings (6 types)
-  - Valid style categories (10 styles)
-  - Outfit composition rules
-  - Style compatibility matrix
-  - Color harmony definitions
-  - Scoring weights
-
-### 7. Data Layer (`data/`)
-- **clothes_metadata.csv**: Preprocessed clothing database
-  - Columns: image, category, predicted_color, predicted_pattern, predicted_style
-  - 88+ items across multiple categories
-  - No runtime updates (read-only)
-
-## Data Flow
-
-### User Journey: Skin Tone Analysis
 ```
-1. User uploads selfie (JPEG/PNG)
-2. Frontend → POST /api/analyze-skin-tone
-3. skin_tone.py processes image
-4. Returns: {"fitzpatrick_type": "III", "skin_tone_label": "medium"}
-5. Frontend displays result
+User Request (skin_tone, style, num_outfits)
+  ↓
+  STEP 1: HARD FILTER (Rules)
+    ├─ Skin tone → color mapping (Fitzpatrick scale)
+    └─ Category separation (tops, bottoms, shoes)
+  ↓
+  STEP 2: SCORE ITEMS (CLIP Ranking)
+    └─ Extract style affinity from pre-computed distributions
+  ↓
+  STEP 3: GENERATE PAIRS
+    ├─ Color harmony check (rules)
+    ├─ Style compatibility check (rules)
+    └─ CLIP semantic similarity (pair match score)
+  ↓
+  STEP 4: DIVERSIFY (Rules)
+    ├─ Unique color combinations
+    └─ No repeated items
+  ↓
+  RETURN: Top-k outfits with explanations
 ```
 
-### User Journey: Outfit Recommendation
-```
-1. User selects style (e.g., "old money")
-2. Frontend → POST /api/recommend-outfits
-3. recommender.py:
-   a. Filters clothing by style + compatible colors
-   b. Ranks items using CLIP + heuristics
-   c. Assembles 6+ outfit combinations
-   d. Scores each outfit
-   e. Diversifies results
-   f. Returns top 3
-4. Response includes:
-   - 3 complete outfits
-   - Scores (0-1)
-   - Explanations
-5. Frontend renders recommendations
-```
+---
 
-## ML Pipeline
+## Module Breakdown
 
-### No Training Required
-This system is **inference-only**:
+### 1. fashion_knowledge.py (Domain Rules)
 
-✅ **What We Use:**
-- Pretrained CLIP (ViT-B/32)
-- Rule-based skin tone detection
-- Heuristic scoring algorithms
-- Preprocessed metadata
+**Purpose:** Central repository of fashion domain knowledge
 
-❌ **What We DON'T Do:**
-- Train deep learning models
-- Fine-tune CLIP
-- Collect user data
-- Retrain on runtime data
+**Contents:**
+- `SKIN_TONE_COLOR_MAP`: Fitzpatrick I-VI → recommended/avoid colors
+- `CATEGORY_PROMPTS`: Separate prompt spaces for each category
+- `COLOR_PROMPTS`: Color inference prompts
+- `STYLE_CLUSTERS`: Multi-prompt style definitions
+- `PATTERN_PROMPTS`: Pattern detection
+- `STYLE_COMPATIBILITY`: Which styles can be paired
+- `COLOR_HARMONY`: Which colors harmonize together
+- `FORMALITY_RULES`: Dress code enforcement
 
-### CLIP Integration
+**Helper Functions:**
+- `get_allowed_colors_for_skin_tone(type)`: Returns allowed colors (HARD CONSTRAINT)
+- `are_styles_compatible(a, b)`: Checks style pairing validity
+- `are_colors_harmonious(a, b)`: Checks color pairing
+- `get_category_type(cat)`: Returns "top", "bottom", or "shoes"
+
+### 2. image_indexer.py (CLIP Ranking)
+
+**Purpose:** Index clothing images using CLIP as a ranking engine
+
+**Methodology:**
+1. Load image
+2. Extract CLIP embedding
+3. Rank against **separate** prompt spaces:
+   - Category: top-1 with score
+   - Color: top-1 with score
+   - Style: **top-3 distribution** with scores
+   - Pattern: top-1 with score
+4. Rename file to descriptive slug: `{category}-{color}-{style1}-{style2}-{hash}.jpg`
+5. Cache results with hash-based validation
+
+**Key Functions:**
+- `_rank_top_1()`: Single-label ranking
+- `_rank_top_k_clusters()`: Multi-label style ranking with prompt variants
+
+**Output Structure:**
 ```python
-# Pseudocode for CLIP similarity
-user_query = "old money style for medium skin tone"
-item_description = "beige shirt with old money style"
-
-user_embedding = clip.encode_text(user_query)
-item_embedding = clip.encode_text(item_description)
-
-similarity = cosine_similarity(user_embedding, item_embedding)
-# Returns 0.0 to 1.0
-```
-
-## Scoring Algorithm
-
-### Item-Level Scoring
-```python
-score = (
-    0.40 * style_match +      # Exact/compatible style
-    0.30 * color_compat +     # Skin-tone-compatible color
-    0.20 * clip_sim +         # CLIP semantic similarity
-    0.10 * data_quality       # Has complete metadata
-)
-```
-
-### Outfit-Level Scoring
-```python
-outfit_score = (
-    0.50 * avg_item_score +   # Average of 3 items
-    0.30 * color_harmony +    # Colors work together
-    0.20 * clip_similarity    # Semantic coherence
-)
-```
-
-## Scalability & Performance
-
-### Current Optimizations
-- Singleton pattern for model instances
-- LRU caching for CLIP embeddings
-- Lazy loading (models load on first use)
-- Efficient pandas filtering
-
-### Bottlenecks
-1. **CLIP inference**: ~100-200ms per query
-2. **Skin tone detection**: ~50-100ms per image
-3. **Outfit assembly**: ~10-20ms (CPU-bound)
-
-### Future Improvements
-- Precompute CLIP embeddings for all items
-- Cache outfit combinations
-- Use GPU for CLIP inference
-- Implement result pagination
-
-## Error Handling
-
-### Graceful Degradation
-- Face detection fails → Use center region
-- CLIP unavailable → Use heuristics only
-- Missing data → Fill with defaults
-- Empty results → Return best available
-
-### Error Responses
-```json
 {
-  "detail": "Descriptive error message",
-  "status_code": 400/500
+  "image": "shirt-navy-formal-old_money-abc12345.jpg",
+  "category": "shirt",
+  "category_score": 0.95,
+  "color": "navy",
+  "color_score": 0.89,
+  "styles": [
+    {"label": "formal", "score": 0.72},
+    {"label": "old_money", "score": 0.68},
+    {"label": "minimalist", "score": 0.45}
+  ],
+  "primary_style": "formal",
+  "pattern": "solid",
+  "pattern_score": 0.91,
+  "hash": "abc123...",
+  "embedding": [...]
 }
 ```
 
-## Security Considerations
+### 3. recommender.py (Rule-Based + CLIP Ranking)
 
-### Current State (Development)
-- CORS: Allow all origins
-- No authentication
-- No rate limiting
-- No input sanitization (beyond validation)
+**Purpose:** Generate outfits by filtering with rules, ranking with CLIP
 
-### Production Recommendations
-- Restrict CORS origins
-- Add API key authentication
-- Implement rate limiting
-- Validate image file types/sizes
-- Add request logging
-- Use HTTPS
+**Workflow:**
 
-## Deployment
-
-### Local Development
-```bash
-uvicorn app.main:app --reload
+#### Step 1: Hard Filter (Rules)
+```python
+allowed_colors = get_allowed_colors_for_skin_tone(fitzpatrick_type)
+filtered_catalog = [item for item in catalog if item["color"] in allowed_colors]
 ```
 
-### Production
-```bash
-uvicorn app.main:app --host 0.0.0.0 --port 8000 --workers 4
+#### Step 2: Score Items (CLIP)
+```python
+style_affinity = item.styles[target_style]  # Pre-computed by indexer
 ```
 
-### Environment Variables (Future)
+#### Step 3: Generate Pairs (Rules + CLIP)
+```python
+for top in tops:
+  for bottom in bottoms:
+    # Rule checks
+    if not are_colors_harmonious(top.color, bottom.color):
+      continue
+    if not are_styles_compatible(top.style, bottom.style):
+      continue
+    
+    # CLIP semantic similarity
+    pair_score = cosine_similarity(top.embedding, bottom.embedding)
+    
+    outfit_score = weighted_sum(item_scores, pair_score, rules_bonuses)
 ```
-CLIP_MODEL_PATH=/path/to/cached/model
-METADATA_PATH=/path/to/clothes_metadata.csv
-LOG_LEVEL=INFO
-CORS_ORIGINS=https://frontend.com
+
+#### Step 4: Diversify (Rules)
+```python
+seen_color_pairs = set()
+for outfit in sorted(candidates, key=score):
+  if (top.color, bottom.color) in seen_color_pairs:
+    continue
+  selected.append(outfit)
 ```
 
-## Testing Strategy
+**Output Structure:**
+```python
+{
+  "top": {...},
+  "bottom": {...},
+  "shoes": {...} or None,
+  "score": 0.87,
+  "explanation": "This formal outfit combines...",
+  "shirt_pant_match_score": 0.79
+}
+```
 
-### Unit Tests (Planned)
-- `test_skin_tone.py`: Test Fitzpatrick mapping
-- `test_clip_utils.py`: Test embedding generation
-- `test_recommender.py`: Test scoring logic
-- `test_api.py`: Test endpoints
+---
 
-### Integration Tests (Planned)
-- End-to-end recommendation flow
-- Error handling scenarios
-- Load testing with concurrent requests
+## Example Flow
 
-### Current Test Suite
-- `test_backend.py`: Manual verification script
+### User Input
+```json
+{
+  "fitzpatrick_type": "IV",
+  "preferred_style": "old_money"
+}
+```
 
-## Monitoring & Logging
+### Step 1: Filter by Skin Tone
+```
+Type IV allowed colors: ["khaki", "brown", "rust", "navy", "cream", ...]
+Filtered: 45 items → 28 items
+```
 
-### Current Logging
-- Startup/shutdown events
-- Model loading status
-- Request processing logs
-- Error traces
+### Step 2: Score by Style
+```
+Navy shirt: old_money=0.68, formal=0.72
+Brown trousers: old_money=0.71, casual=0.58
+```
 
-### Production Metrics (Recommended)
-- Request latency (p50, p95, p99)
-- Error rates by endpoint
-- CLIP inference time
-- Cache hit rates
-- Active user count
+### Step 3: Check Compatibility
+```
+✓ navy + brown = harmonious
+✓ old_money + old_money = compatible
+CLIP pair score = 0.79
+```
 
-## Future Enhancements
+### Step 4: Generate Explanation
+```
+"This old_money outfit combines formal and old_money elements with 
+old_money aesthetics. The navy top and brown bottom create a harmonious 
+color combination. Both colors complement Fitzpatrick type IV skin tone. 
+The pieces create a cohesive look."
+```
 
-### Phase 1 (Near-term)
-- [ ] Add user feedback collection
-- [ ] Implement recommendation explanations UI
-- [ ] Cache precomputed embeddings
-- [ ] Add more clothing categories
+---
 
-### Phase 2 (Mid-term)
-- [ ] Multi-image upload (full outfit)
-- [ ] Seasonal recommendations
-- [ ] Budget filtering
-- [ ] Brand preferences
+## Why This Approach Works
 
-### Phase 3 (Long-term)
-- [ ] Virtual try-on integration
-- [ ] Social features (share outfits)
-- [ ] Personalized style profiles
-- [ ] Real-time trend analysis
+### Traditional ML Approach (❌)
+- CLIP as classifier
+- Filename-based assumptions
+- Single-label predictions
+- No explainability
+- No domain constraints
 
-## Conclusion
+### Our Approach (✅)
+- CLIP as ranking engine
+- Multi-label distributions
+- Rule-based constraints
+- Full explainability
+- Domain expert knowledge encoded
 
-This backend represents a production-ready, ML-powered recommendation system that:
-- ✅ Uses real ML models (CLIP)
-- ✅ Combines CV and NLP techniques
-- ✅ Provides explainable recommendations
-- ✅ Scales to production workloads
-- ✅ Maintains clean, modular code
+---
 
-Perfect for demonstrating ML engineering skills in a portfolio or interview setting.
+## Summary
+
+This system embodies the principle:
+
+> **"CLIP ranks semantic similarity. Rules enforce reality."**
+
+By separating domain logic (rules) from ML ranking (CLIP), we achieve:
+- ✅ Explainable recommendations
+- ✅ Domain expert knowledge encoded
+- ✅ Correct usage of CLIP (ranking, not classification)
+- ✅ Multi-label style distributions
+- ✅ Extensible architecture
+- ✅ Production-ready constraints
+
+**The result:** A fashion stylist system, not a naive image classifier.

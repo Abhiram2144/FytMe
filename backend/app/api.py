@@ -8,10 +8,13 @@ from pydantic import BaseModel, Field
 from typing import List, Dict, Optional
 from pathlib import Path
 
-from app.skin_tone import predict_skin_tone
-from app.recommender import get_recommender
-from app.image_indexer import get_indexer
-from app.config import VALID_STYLES
+from .skin_tone import predict_skin_tone
+from .recommender import get_recommender
+from .image_indexer import get_indexer
+from .fashion_knowledge import STYLE_CLUSTERS  # Use new fashion knowledge base
+
+# Valid styles from fashion_knowledge
+VALID_STYLES = list(STYLE_CLUSTERS.keys())
 
 
 # Request/Response models
@@ -121,21 +124,54 @@ async def recommend_outfits(request: RecommendationRequest):
         outfits = recommender.recommend_outfits(
             fitzpatrick_type=request.fitzpatrick_type,
             preferred_style=request.preferred_style,
-            num_outfits=3
+            num_outfits=5  # Generate 5 diverse outfits
         )
 
         if len(outfits) == 0:
             raise HTTPException(
                 status_code=404,
                 detail=(
-                    "No outfits available. Please add at least one top and one bottom to assets/clothes/. Shoes are optional."
+                    "No outfits available. Please add at least one top and one bottom to assets/clothes/. "
+                    "Make sure items are in colors that suit your skin tone."
                 )
             )
         
-        # Convert to response format
+        # Convert NEW outfit structure to response format
+        # New format: {top: {...}, bottom: {...}, shoes: {...}, score, explanation, shirt_pant_match_score}
         response_outfits = []
         for outfit in outfits:
-            items = [ClothingItem(**item) for item in outfit['items']]
+            items = []
+            
+            # Add top
+            if outfit.get("top"):
+                top = outfit["top"]
+                items.append(ClothingItem(
+                    image=top["image"],
+                    category=top["category"],
+                    color=top["color"],
+                    style=top.get("primary_style", "casual")
+                ))
+            
+            # Add bottom
+            if outfit.get("bottom"):
+                bottom = outfit["bottom"]
+                items.append(ClothingItem(
+                    image=bottom["image"],
+                    category=bottom["category"],
+                    color=bottom["color"],
+                    style=bottom.get("primary_style", "casual")
+                ))
+            
+            # Add shoes if present
+            if outfit.get("shoes"):
+                shoes = outfit["shoes"]
+                items.append(ClothingItem(
+                    image=shoes["image"],
+                    category=shoes["category"],
+                    color=shoes["color"],
+                    style=shoes.get("primary_style", "casual")
+                ))
+            
             response_outfits.append(Outfit(
                 items=items,
                 score=outfit['score'],
@@ -172,20 +208,30 @@ async def debug_catalog():
 
     category_counts = {}
     style_counts = {}
+    color_counts = {}
+    
     for item in recommender.catalog:
         category_counts[item.get("category", "unknown")] = category_counts.get(item.get("category", "unknown"), 0) + 1
-        style_counts[item.get("style", "unknown")] = style_counts.get(item.get("style", "unknown"), 0) + 1
+        
+        # Use primary_style from new indexer
+        primary_style = item.get("primary_style", "unknown")
+        style_counts[primary_style] = style_counts.get(primary_style, 0) + 1
+        
+        color = item.get("color", "unknown")
+        color_counts[color] = color_counts.get(color, 0) + 1
 
     return {
         "total_items": len(recommender.catalog),
         "category_counts": category_counts,
         "style_counts": style_counts,
+        "color_counts": color_counts,
         "sample_items": [
             {
                 "image": item.get("image"),
                 "category": item.get("category"),
                 "color": item.get("color"),
-                "style": item.get("style")
+                "primary_style": item.get("primary_style"),
+                "styles": item.get("styles", [])[:2]  # Show top-2 styles
             }
             for item in recommender.catalog[:5]
         ]

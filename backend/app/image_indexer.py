@@ -1,7 +1,17 @@
 """
-Automatic image indexing using CLIP zero-shot inference.
-Scans assets/clothes/ directory and infers category, color, and style.
-Caches results to catalog.json for efficiency.
+Automatic image indexing using CLIP as a similarity ranking engine.
+
+PHILOSOPHY:
+- CLIP ranks semantic similarity across separate embedding spaces
+- Each attribute (category, color, style) is inferred INDEPENDENTLY
+- Results are stored as top-k distributions with confidence scores
+- NO filename-based assumptions
+- Styles are MULTI-LABEL, not single labels
+
+This module implements CLIP correctly:
+- NOT as a classifier
+- NOT as ground truth
+- BUT as a similarity ranking engine providing top-k results
 """
 
 import os
@@ -13,6 +23,14 @@ import torch
 from PIL import Image
 import clip
 import hashlib
+
+# Import fashion domain knowledge
+from .fashion_knowledge import (
+    CATEGORY_PROMPTS,
+    COLOR_PROMPTS,
+    STYLE_CLUSTERS,
+    PATTERN_PROMPTS
+)
 
 
 class ClothingIndexer:
@@ -78,8 +96,13 @@ class ClothingIndexer:
             cache_item = {
                 "image": item["image"],
                 "category": item["category"],
+                "category_score": item.get("category_score", 0.0),
                 "color": item["color"],
-                "style": item["style"],
+                "color_score": item.get("color_score", 0.0),
+                "styles": item.get("styles", []),  # List of {"label": str, "score": float}
+                "primary_style": item.get("primary_style", "casual"),
+                "pattern": item.get("pattern", "solid"),
+                "pattern_score": item.get("pattern_score", 0.0),
                 "hash": item.get("hash", "")
             }
             cache_data.append(cache_item)
@@ -167,73 +190,119 @@ class ClothingIndexer:
     
     def _index_image(self, img_path: Path) -> Dict:
         """
-        Use CLIP to infer all attributes for a single image.
+        Use CLIP as a RANKING ENGINE to infer attributes across separate embedding spaces.
+        
+        METHODOLOGY:
+        1. Extract image embedding once
+        2. Rank against CATEGORY prompts → pick top-1 with score
+        3. Rank against COLOR prompts → pick top-1 with score  
+        4. Rank against STYLE prompts → keep top-3 with scores (multi-label distribution)
+        5. Optionally rank against PATTERN prompts → pick top-1 with score
+        
+        CLIP provides similarity rankings. Domain rules (in recommender) enforce constraints.
         
         Returns:
-            Dict with image, category, color, styles (with scores), primary_style, hash, embedding
+            Dict with:
+            - image: filename
+            - category: top category label
+            - category_score: confidence
+            - color: top color label
+            - color_score: confidence
+            - styles: list of {"label": str, "score": float} (top-3 distribution)
+            - primary_style: highest scoring style
+            - pattern: optional pattern label
+            - hash: file hash for cache validation
+            - embedding: image vector
         """
         # Load and preprocess image
         with Image.open(img_path).convert('RGB') as image:
             image_input = self.preprocess(image).unsqueeze(0).to(self.device)
 
-        # Get image embedding
+        # Get image embedding (used for all attribute spaces)
         with torch.no_grad():
             image_embedding = self.model.encode_image(image_input)
             image_embedding = image_embedding / image_embedding.norm(dim=-1, keepdim=True)
 
-        # Attribute prompts
-        category_prompts = [
-            "a photo of a shirt",
-            "a photo of pants",
-            "a photo of trousers",
-            "a photo of joggers",
-            "a photo of hoodie",
-            "a photo of jacket",
-            "a photo of shoes",
-        ]
-        category_labels = ["shirt", "pants", "pants", "joggers", "hoodie", "jacket", "shoes"]
+        # ========================================================
+        # STEP 1: CATEGORY INFERENCE (independent space)
+        # ========================================================
+        category_prompts_list = []
+        category_labels = []
+        for cat, prompts in CATEGORY_PROMPTS.items():
+            # Use first prompt variant for each category
+            category_prompts_list.append(prompts[0])
+            category_labels.append(cat)
+        
+        category, category_score = self._rank_top_1(
+            image_embedding, 
+            category_prompts_list, 
+            category_labels
+        )
 
-        color_prompts = [
-            "a black clothing item",
-            "a navy clothing item",
-            "a beige clothing item",
-            "a white clothing item",
-            "a brown clothing item",
-            "a gray clothing item",
-        ]
-        color_labels = ["black", "navy", "beige", "white", "brown", "gray"]
+        # ========================================================
+        # STEP 2: COLOR INFERENCE (independent space)
+        # ========================================================
+        color_prompts_list = []
+        color_labels = []
+        for col, prompts in COLOR_PROMPTS.items():
+            # Use first prompt variant for each color
+            color_prompts_list.append(prompts[0])
+            color_labels.append(col)
+        
+        color, color_score = self._rank_top_1(
+            image_embedding,
+            color_prompts_list,
+            color_labels
+        )
 
-        style_prompts = [
-            "formal office outfit",
-            "classic preppy outfit",
-            "old money aesthetic outfit",
-            "casual everyday outfit",
-            "streetwear outfit",
-            "sportswear athletic outfit",
-        ]
-        style_labels = [
-            "formal",
-            "preppy",
-            "old money",
-            "casual",
-            "streetwear",
-            "sportswear",
-        ]
+        # ========================================================
+        # STEP 3: STYLE INFERENCE (multi-label distribution)
+        # ========================================================
+        # Each style cluster has multiple prompt variants
+        # Average similarity across all prompts in the cluster for robustness
+        style_clusters_list = []
+        style_labels = []
+        for style_name, style_config in STYLE_CLUSTERS.items():
+            style_clusters_list.append(style_config["prompts"])
+            style_labels.append(style_name)
+        
+        styles = self._rank_top_k_clusters(
+            image_embedding,
+            style_clusters_list,
+            style_labels,
+            top_k=3
+        )
+        
+        primary_style = styles[0]["label"] if styles else "casual"
 
-        # Infer category and color (single label)
-        category, category_score, _ = self._infer_single(image_embedding, category_prompts, category_labels)
-        color, color_score, _ = self._infer_single(image_embedding, color_prompts, color_labels)
+        # ========================================================
+        # STEP 4: PATTERN INFERENCE (optional, for future use)
+        # ========================================================
+        pattern_prompts_list = []
+        pattern_labels = []
+        for pat, prompts in PATTERN_PROMPTS.items():
+            pattern_prompts_list.append(prompts[0])
+            pattern_labels.append(pat)
+        
+        pattern, pattern_score = self._rank_top_1(
+            image_embedding,
+            pattern_prompts_list,
+            pattern_labels
+        )
 
-        # Infer styles (multi-label top-2 with scores)
-        styles = self._infer_styles(image_embedding, style_prompts, style_labels, top_k=3)
-        styles = self._apply_style_adjustments(styles, category)
-        primary_style = styles[0]["label"] if styles else "unknown"
-
-        # Sanitize and optionally rename file to model-friendly name
+        # ========================================================
+        # STEP 5: GENERATE DESCRIPTIVE FILENAME
+        # ========================================================
+        # Create a human-readable, model-friendly filename
         digest = self._get_image_hash(img_path)[:8]
         ext = img_path.suffix.lower()
-        base = self._slugify(f"{category}-{color}-{primary_style}-{digest}")
+        
+        # Include top-2 styles for richer filename
+        style_slug = "-".join([s["label"] for s in styles[:2]])
+        base = self._slugify(f"{category}-{color}-{style_slug}-{digest}")
         new_name = self._unique_filename(base, ext, img_path.name)
+        
+        # Rename file if different
         if new_name != img_path.name:
             new_path = img_path.with_name(new_name)
             try:
@@ -243,68 +312,103 @@ class ClothingIndexer:
             except Exception as e:
                 print(f"⚠️  Rename failed for {img_path.name}: {e}")
 
+        # Debug output
         if self.debug:
             debug_styles = ", ".join([f"{s['label']}={s['score']:.2f}" for s in styles[:3]])
-            print(f"[DEBUG] {img_path.name} | cat={category} ({category_score:.2f}) | color={color} ({color_score:.2f}) | styles: {debug_styles}")
+            print(f"[DEBUG] {img_path.name}")
+            print(f"  Category: {category} ({category_score:.3f})")
+            print(f"  Color: {color} ({color_score:.3f})")
+            print(f"  Styles: {debug_styles}")
+            print(f"  Pattern: {pattern} ({pattern_score:.3f})")
 
         return {
             "image": img_path.name,
             "category": category,
-            "category_score": category_score,
+            "category_score": float(category_score),
             "color": color,
-            "color_score": color_score,
-            "style": primary_style,
-            "styles": styles,
+            "color_score": float(color_score),
+            "styles": styles,  # List of {"label": str, "score": float}
+            "primary_style": primary_style,
+            "pattern": pattern,
+            "pattern_score": float(pattern_score),
             "hash": self._get_image_hash(img_path),
             "embedding": image_embedding.cpu().numpy()
         }
     
-    def _infer_single(self, image_embedding, prompts: List[str], labels: List[str]) -> Tuple[str, float, torch.Tensor]:
+    def _rank_top_1(
+        self, 
+        image_embedding: torch.Tensor, 
+        prompts: List[str], 
+        labels: List[str]
+    ) -> Tuple[str, float]:
+        """
+        Rank image against prompts and return top-1 label with confidence score.
+        
+        This is CLIP used correctly: as a similarity ranking engine, not a classifier.
+        """
         text_inputs = clip.tokenize(prompts).to(self.device)
         with torch.no_grad():
             text_embeddings = self.model.encode_text(text_inputs)
             text_embeddings = text_embeddings / text_embeddings.norm(dim=-1, keepdim=True)
+        
+        # Cosine similarity
         similarities = (image_embedding @ text_embeddings.T).squeeze(0)
-        probs = torch.softmax(similarities, dim=0)
+        
+        # Convert to probabilities for interpretability
+        probs = torch.softmax(similarities * 100, dim=0)  # Scale for sharper softmax
+        
         best_idx = similarities.argmax().item()
-        return labels[best_idx], float(probs[best_idx]), similarities
-
-    def _infer_styles(self, image_embedding, prompts: List[str], labels: List[str], top_k: int = 2) -> List[Dict]:
-        text_inputs = clip.tokenize(prompts).to(self.device)
-        with torch.no_grad():
-            text_embeddings = self.model.encode_text(text_inputs)
-            text_embeddings = text_embeddings / text_embeddings.norm(dim=-1, keepdim=True)
-        similarities = (image_embedding @ text_embeddings.T).squeeze(0)
-        probs = torch.softmax(similarities, dim=0)
-
+        return labels[best_idx], float(probs[best_idx])
+    
+    def _rank_top_k_clusters(
+        self,
+        image_embedding: torch.Tensor,
+        style_clusters: List[List[str]],  # Each cluster is a list of prompt variants
+        labels: List[str],
+        top_k: int = 3
+    ) -> List[Dict]:
+        """
+        Rank image against style clusters using multiple prompt variants per cluster.
+        Returns top-k styles with confidence scores as a distribution.
+        
+        Each style cluster has multiple prompts. We average similarity across prompts
+        within each cluster for more robust style inference.
+        
+        This implements CLIP correctly: multi-label with top-k distribution, not single label.
+        """
+        cluster_scores = []
+        
+        for prompts in style_clusters:
+            # Encode all prompts in this cluster
+            text_inputs = clip.tokenize(prompts).to(self.device)
+            with torch.no_grad():
+                text_embeddings = self.model.encode_text(text_inputs)
+                text_embeddings = text_embeddings / text_embeddings.norm(dim=-1, keepdim=True)
+            
+            # Compute similarities
+            similarities = (image_embedding @ text_embeddings.T).squeeze(0)
+            
+            # Average similarity across all prompts in this cluster
+            avg_similarity = similarities.mean().item()
+            cluster_scores.append(avg_similarity)
+        
+        # Convert to tensor for top-k
+        cluster_scores_tensor = torch.tensor(cluster_scores)
+        
+        # Softmax for interpretability
+        probs = torch.softmax(cluster_scores_tensor * 100, dim=0)
+        
+        # Get top-k
         topk_scores, topk_idx = torch.topk(probs, k=min(top_k, len(labels)))
+        
         styles = []
         for score, idx in zip(topk_scores.tolist(), topk_idx.tolist()):
-            styles.append({"label": labels[idx], "score": float(score)})
+            styles.append({
+                "label": labels[idx],
+                "score": float(score)
+            })
+        
         return styles
-
-    def _apply_style_adjustments(self, styles: List[Dict], category: str) -> List[Dict]:
-        adjusted = []
-        for entry in styles:
-            label = entry["label"]
-            score = entry["score"]
-
-            # Formal is strict: penalize for athleisure or casual garments
-            if label == "formal" and category in {"joggers", "hoodie", "shoes"}:
-                score *= 0.5
-
-            # Old money is heritage/preppy but not formal: slight penalty if category is overtly sporty
-            if label == "old money" and category in {"joggers", "hoodie"}:
-                score *= 0.8
-
-            adjusted.append({"label": label, "score": score})
-
-        # Re-normalize to keep scores interpretable (not strictly sum to 1, just scale max to 1)
-        if adjusted:
-            max_score = max(a["score"] for a in adjusted)
-            if max_score > 0:
-                adjusted = [{"label": a["label"], "score": a["score"] / max_score} for a in adjusted]
-        return adjusted
 
 
 # Global singleton
