@@ -11,16 +11,18 @@ from PIL import Image
 import io
 from typing import Dict
 from sklearn.cluster import KMeans
-import mediapipe as mp
+from mediapipe.tasks import python
+from mediapipe.tasks.python import vision
 
 from .config import FITZPATRICK_DESCRIPTIONS
 
-# Initialize MediaPipe Face Detection once at module scope
-mp_face_detection = mp.solutions.face_detection
-FACE_DETECTOR = mp_face_detection.FaceDetection(
-    model_selection=1,
+# Initialize MediaPipe Face Detector once at module scope (new API for 0.10.30+)
+base_options = python.BaseOptions(model_asset_path='')
+options = vision.FaceDetectorOptions(
+    base_options=base_options,
     min_detection_confidence=0.5
 )
+FACE_DETECTOR = vision.FaceDetector.create_from_options(options)
 
 
 def predict_skin_tone(image_bytes: bytes) -> Dict[str, str]:
@@ -39,11 +41,14 @@ def predict_skin_tone(image_bytes: bytes) -> Dict[str, str]:
         # Load image
         image = Image.open(io.BytesIO(image_bytes)).convert("RGB")
         img_rgb = np.array(image)
+        
+        # Convert to MediaPipe Image format
+        mp_image = python.Image(image_format=python.ImageFormat.SRGB, data=img_rgb)
 
-        # Face detection using MediaPipe
-        results = FACE_DETECTOR.process(img_rgb)
+        # Face detection using MediaPipe (new API)
+        detection_result = FACE_DETECTOR.detect(mp_image)
 
-        if not results.detections:
+        if not detection_result.detections:
             # No face detected - return default
             print("[SkinTone] No face detected, returning default")
             return {
@@ -52,19 +57,15 @@ def predict_skin_tone(image_bytes: bytes) -> Dict[str, str]:
             }
 
         # Use first detected face
-        detection = results.detections[0]
-        bbox = detection.location_data.relative_bounding_box
+        detection = detection_result.detections[0]
+        bbox = detection.bounding_box
         h, w, _ = img_rgb.shape
 
-        # Convert relative coordinates to absolute
-        x1 = int(bbox.xmin * w)
-        y1 = int(bbox.ymin * h)
-        x2 = x1 + int(bbox.width * w)
-        y2 = y1 + int(bbox.height * h)
-
-        # Clamp to image bounds
-        x1, y1 = max(0, x1), max(0, y1)
-        x2, y2 = min(w, x2), min(h, y2)
+        # Extract bounding box coordinates (already in absolute pixels)
+        x1 = max(0, bbox.origin_x)
+        y1 = max(0, bbox.origin_y)
+        x2 = min(w, bbox.origin_x + bbox.width)
+        y2 = min(h, bbox.origin_y + bbox.height)
 
         # Extract face region
         face_crop = img_rgb[y1:y2, x1:x2]
