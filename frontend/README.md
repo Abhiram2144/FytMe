@@ -17,7 +17,7 @@ Open [http://localhost:5173](http://localhost:5173) to view it in the browser.
 ## 📋 Prerequisites
 
 - Node.js (v16 or higher)
-- Running backend at `http://localhost:8000`
+- Backend URL configured via env (see below)
 
 ## 🎯 Features
 
@@ -58,6 +58,29 @@ The frontend connects to these endpoints:
 - `POST /api/analyze-skin-tone` - Analyzes uploaded selfie
 - `GET /api/styles` - Fetches available fashion styles
 - `POST /api/recommend-outfits` - Gets outfit recommendations
+
+### Environment Variables
+
+Configure the backend URLs without code changes using Vite env vars.
+
+1. Copy `.env.example` to `.env` and set values:
+
+```dotenv
+VITE_API_BASE_URL=https://your-backend.onrender.com/api
+VITE_IMAGE_BASE_URL=https://your-backend.onrender.com/api/images
+```
+
+2. Development (optional):
+
+```dotenv
+# For local backend
+VITE_API_BASE_URL=http://localhost:8000/api
+# IMAGE base defaults to `${VITE_API_BASE_URL}/images` if not provided
+```
+
+3. Deployment:
+- Set the same env vars in your hosting provider (Render/Netlify/Vercel).
+- No code changes needed; `src/services/api.js` reads these at build time.
 
 ## 🖼️ Adding Demo Images
 
