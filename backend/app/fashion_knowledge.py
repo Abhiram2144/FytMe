@@ -1,19 +1,224 @@
 """
 Fashion Knowledge Base - Domain Rules and Embedding Spaces
 
-This module defines the foundational fashion logic that governs the recommendation system.
+RULE PRIORITY ORDER (CRITICAL):
+================================
+1. Formality rules (HARD BLOCK) - category-type cannot be used in formality level
+2. Category-type rules (HARD BLOCK) - jeans/hoodies/cargo forbid certain contexts
+3. Skin-tone color constraints (HARD BLOCK) - must be in allowed colors
+4. Pattern formality rules (HARD BLOCK) - graphic patterns forbidden in formal/smart_casual
+5. Style compatibility (SOFT BLOCK) - styles can conflict but don't hard-fail
+6. Color harmony (SOFT BONUS) - prefers harmonious but allows fallback
+7. CLIP similarity (RANKING ONLY) - ranks within all constraints, never overrides rules
 
 PHILOSOPHY:
-- CLIP ranks semantic similarity
-- RULES enforce reality
+-----------
+In fashion, the opposite of "allowed" is "forbidden".
 
-CLIP is a similarity ranking engine, NOT a classifier.
-It must never override domain rules defined here.
+CLIP provides perception (similarity ranking).
+Rules provide reasoning (real-world appropriateness).
+
+If a rule blocks an item, CLIP CANNOT resurrect it.
 """
 
 # ========================================================
-# PART 1: SKIN TONE → COLOR COMPATIBILITY (HARD RULES)
+# PART 1.5: CATEGORY-TYPE STRICTNESS RULES
 # ========================================================
+
+# Define which specific item types are appropriate for each formality level
+# This is STRICTER than just category—it's the ACTUAL item subtype
+
+TOP_TYPE_RULES = {
+    "shirt": {  # Dress shirts (solid, formal fabrics)
+        "formal": True,
+        "smart_casual": True,
+        "casual": True,
+        "streetwear": False,
+        "athletic": False,
+        "old_money": True,
+        "minimalist": True
+    },
+    "t-shirt": {  # Casual t-shirts
+        "formal": False,
+        "smart_casual": False,
+        "casual": True,
+        "streetwear": True,
+        "athletic": True,
+        "old_money": False,
+        "minimalist": True
+    },
+    "polo": {  # Polo shirts
+        "formal": False,
+        "smart_casual": True,
+        "casual": True,
+        "streetwear": False,
+        "athletic": False,
+        "old_money": True,
+        "minimalist": True
+    },
+    "hoodie": {  # Hoodies
+        "formal": False,
+        "smart_casual": False,
+        "casual": True,
+        "streetwear": True,
+        "athletic": True,
+        "old_money": False,
+        "minimalist": False
+    },
+    "sweater": {  # Knit sweaters
+        "formal": False,
+        "smart_casual": True,
+        "casual": True,
+        "streetwear": False,
+        "athletic": False,
+        "old_money": True,
+        "minimalist": True
+    },
+    "jacket": {  # Blazers/outerwear
+        "formal": True,
+        "smart_casual": True,
+        "casual": True,
+        "streetwear": True,
+        "athletic": False,
+        "old_money": True,
+        "minimalist": True
+    }
+}
+
+BOTTOM_TYPE_RULES = {
+    "trousers": {  # Dress trousers
+        "formal": True,
+        "smart_casual": True,
+        "casual": True,
+        "streetwear": False,
+        "athletic": False,
+        "old_money": True,
+        "minimalist": True
+    },
+    "jeans": {  # Denim (typically requires dark, clean in formal/smart_casual)
+        "formal": False,  # Never in formal
+        "smart_casual": True,  # Only if dark and pristine
+        "casual": True,
+        "streetwear": True,
+        "athletic": False,
+        "old_money": False,  # Preppy doesn't wear regular jeans
+        "minimalist": True,
+        "notes": "Only dark, clean denim in smart_casual. Ripped/distressed forbidden."
+    },
+    "cargo_pants": {  # Cargo/utility pants
+        "formal": False,
+        "smart_casual": False,
+        "casual": True,
+        "streetwear": True,
+        "athletic": False,
+        "old_money": False,
+        "minimalist": False,
+        "notes": "Cargo pants never formal or smart casual"
+    },
+    "joggers": {  # Sweatpants/joggers
+        "formal": False,
+        "smart_casual": False,
+        "casual": True,
+        "streetwear": True,
+        "athletic": True,
+        "old_money": False,
+        "minimalist": False,
+        "notes": "Joggers only casual/athletic"
+    },
+    "shorts": {  # Shorts
+        "formal": False,
+        "smart_casual": False,
+        "casual": True,
+        "streetwear": True,
+        "athletic": True,
+        "old_money": False,
+        "minimalist": False,
+        "notes": "Shorts never formal"
+    }
+}
+
+SHOE_TYPE_RULES = {
+    "dress_shoes": {  # Formal shoes (oxfords, loafers, brogues)
+        "formal": True,
+        "smart_casual": True,
+        "casual": False,
+        "streetwear": False,
+        "athletic": False,
+        "old_money": True,
+        "minimalist": True
+    },
+    "loafers": {  # Casual loafers
+        "formal": True,
+        "smart_casual": True,
+        "casual": True,
+        "streetwear": False,
+        "athletic": False,
+        "old_money": True,
+        "minimalist": True
+    },
+    "sneakers": {  # Casual sneakers/trainers
+        "formal": False,
+        "smart_casual": False,
+        "casual": True,
+        "streetwear": True,
+        "athletic": True,
+        "old_money": False,
+        "minimalist": True,
+        "notes": "Sneakers never formal or smart_casual"
+    },
+    "running_shoes": {  # Athletic shoes
+        "formal": False,
+        "smart_casual": False,
+        "casual": False,
+        "streetwear": False,
+        "athletic": True,
+        "old_money": False,
+        "minimalist": False,
+        "notes": "Running shoes athletic only"
+    }
+}
+
+PATTERN_FORMALITY_RULES = {
+    "formal": {
+        "allowed": ["solid", "subtle_texture", "fine_stripe"],
+        "forbidden": ["graphic", "large_pattern", "loud_stripe", "bold_check"],
+        "notes": "Formal demands subtlety"
+    },
+    "smart_casual": {
+        "allowed": ["solid", "fine_stripe", "subtle_check"],
+        "forbidden": ["graphic", "loud_stripe", "large_pattern"],
+        "notes": "Graphics too casual for business contexts"
+    },
+    "casual": {
+        "allowed": ["solid", "striped", "checked", "graphic", "textured"],
+        "forbidden": [],
+        "notes": "Casual allows anything"
+    },
+    "streetwear": {
+        "allowed": ["solid", "graphic", "large_pattern", "bold"],
+        "forbidden": [],
+        "notes": "Urban street allows bold patterns"
+    },
+    "athletic": {
+        "allowed": ["solid", "stripe", "graphic"],
+        "forbidden": [],
+        "notes": "Athletic allows practical patterns"
+    },
+    "old_money": {
+        "allowed": ["solid", "fine_stripe", "subtle_check"],
+        "forbidden": ["graphic", "loud_pattern"],
+        "notes": "Heritage preppy is understated"
+    },
+    "minimalist": {
+        "allowed": ["solid", "subtle_texture"],
+        "forbidden": ["graphic", "large_pattern", "loud"],
+        "notes": "Minimalism avoids visual noise"
+    }
+}
+
+
+# ========================================================
+# PART 2: SKIN TONE → COLOR COMPATIBILITY (HARD RULES)
 
 # Based on the Fitzpatrick scale (I–VI)
 # These are deterministic, rule-based mappings that CLIP cannot override.
@@ -498,8 +703,66 @@ FORMALITY_RULES = {
 
 
 # ========================================================
+# PART 7: COLOR MATCHING FLEXIBILITY
+# ========================================================
+
+# Map catalog colors to recommended color families
+# This allows "navy" to match "royal blue" or "cobalt", etc.
+COLOR_EQUIVALENTS = {
+    "navy": ["navy", "royal blue", "cobalt", "blue"],
+    "blue": ["blue", "royal blue", "cobalt", "navy"],
+    "light blue": ["light blue", "blue", "cobalt"],
+    "black": ["black"],
+    "white": ["white", "cream"],
+    "cream": ["cream", "white", "beige"],
+    "beige": ["beige", "cream", "camel", "khaki"],
+    "brown": ["brown", "chocolate brown", "camel"],
+    "grey": ["grey", "charcoal", "warm grey"],
+    "burgundy": ["burgundy", "maroon", "wine"],
+    "red": ["red", "bright red"],
+    "pink": ["pink", "bright pink", "hot pink", "dusty rose", "coral"],
+    "purple": ["purple", "deep purple", "lavender", "plum"],
+    "green": ["green", "emerald", "forest green", "olive", "sage green"],
+    "yellow": ["yellow", "mustard", "gold"],
+    "orange": ["orange", "burnt orange", "coral", "rust", "terracotta"],
+    "teal": ["teal", "turquoise"],
+    "khaki": ["khaki", "beige", "camel"]
+}
+
+
+# ========================================================
 # HELPER FUNCTIONS
 # ========================================================
+
+def matches_allowed_color(catalog_color: str, allowed_colors: list) -> bool:
+    """
+    Check if a catalog color matches any of the allowed colors.
+    Uses flexible matching via COLOR_EQUIVALENTS.
+    
+    Args:
+        catalog_color: Color detected in the catalog item (e.g., "navy")
+        allowed_colors: List of recommended colors for skin tone (e.g., ["royal blue", "cobalt"])
+        
+    Returns:
+        True if the catalog color is equivalent to any allowed color
+    """
+    catalog_color_lower = catalog_color.lower()
+    
+    # Get equivalent colors for this catalog color
+    equiv = COLOR_EQUIVALENTS.get(catalog_color_lower, [catalog_color_lower])
+    
+    # Check if any equivalent matches an allowed color
+    for allowed in allowed_colors:
+        allowed_lower = allowed.lower()
+        if allowed_lower in equiv or allowed_lower == catalog_color_lower:
+            return True
+        # Also check reverse: if allowed color has equivalents that include catalog color
+        allowed_equiv = COLOR_EQUIVALENTS.get(allowed_lower, [allowed_lower])
+        if catalog_color_lower in allowed_equiv:
+            return True
+    
+    return False
+
 
 def get_allowed_colors_for_skin_tone(skin_tone: str) -> list:
     """
@@ -601,3 +864,80 @@ def validate_formality_match(items: list, target_formality: str = None) -> bool:
             return False
     
     return True
+
+
+def is_category_type_allowed(category: str, style: str) -> bool:
+    """
+    HARD RULE: Check if a specific category type is allowed in a specific style.
+    
+    This enforces "jeans are never formal", "hoodies are not smart_casual", etc.
+    
+    Args:
+        category: Item category (e.g., "jeans", "hoodie", "trousers")
+        style: Target style (e.g., "formal", "casual", "smart_casual")
+        
+    Returns:
+        True if the category is allowed in this style, False otherwise
+        
+    NOTE: If a rule forbids it, CLIP CANNOT resurrect it.
+    """
+    # Check tops
+    if category in TOP_TYPE_RULES:
+        allowed = TOP_TYPE_RULES[category].get(style, None)
+        if allowed is False:  # Explicitly forbidden
+            return False
+        if allowed is True:  # Explicitly allowed
+            return True
+    
+    # Check bottoms
+    if category in BOTTOM_TYPE_RULES:
+        allowed = BOTTOM_TYPE_RULES[category].get(style, None)
+        if allowed is False:  # Explicitly forbidden
+            return False
+        if allowed is True:  # Explicitly allowed
+            return True
+    
+    # Check shoes
+    if category in SHOE_TYPE_RULES:
+        allowed = SHOE_TYPE_RULES[category].get(style, None)
+        if allowed is False:  # Explicitly forbidden
+            return False
+        if allowed is True:  # Explicitly allowed
+            return True
+    
+    # Default: if not in rules, allow it (backward compatibility)
+    return True
+
+
+def is_pattern_allowed_in_style(pattern: str, style: str) -> bool:
+    """
+    HARD RULE: Check if a pattern is allowed in a specific style.
+    
+    This forbids graphic patterns in formal, enforces subtlety in smart_casual, etc.
+    
+    Args:
+        pattern: Pattern type (e.g., "solid", "graphic", "striped", "checked")
+        style: Target style (e.g., "formal", "casual", "smart_casual")
+        
+    Returns:
+        True if pattern is allowed, False if explicitly forbidden
+        
+    NOTE: If a rule forbids it, CLIP CANNOT resurrect it.
+    """
+    if style not in PATTERN_FORMALITY_RULES:
+        return True  # Unknown style defaults to allow
+    
+    rules = PATTERN_FORMALITY_RULES[style]
+    pattern_lower = pattern.lower()
+    
+    # Check forbidden list first (more important than allowed)
+    if pattern_lower in [p.lower() for p in rules.get("forbidden", [])]:
+        return False
+    
+    # Check allowed list (if not in allowed, still allow for compatibility)
+    if pattern_lower in [p.lower() for p in rules.get("allowed", [])]:
+        return True
+    
+    # If not explicitly mentioned, default to allow
+    return True
+

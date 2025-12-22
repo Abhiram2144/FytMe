@@ -23,6 +23,8 @@ import torch
 from PIL import Image
 import clip
 import hashlib
+import cv2
+import numpy as np
 
 # Import fashion domain knowledge
 from .fashion_knowledge import (
@@ -56,6 +58,110 @@ class ClothingIndexer:
         """Get hash of image file for change detection."""
         with open(img_path, 'rb') as f:
             return hashlib.md5(f.read()).hexdigest()
+    
+    def _extract_dominant_color(self, img_path: Path) -> Tuple[int, int, int] | None:
+        """Estimate dominant clothing color using pixel analysis.
+
+        Strategy:
+        - Center-crop to reduce background influence
+        - Ignore near-white and near-black pixels
+        - KMeans (k=3) to find dominant cluster
+        - Return BGR color tuple for the largest cluster
+        """
+        try:
+            img_bgr = cv2.imread(str(img_path))
+            if img_bgr is None:
+                return None
+
+            h, w = img_bgr.shape[:2]
+            # Center crop (70% area)
+            y1 = int(h * 0.15)
+            y2 = int(h * 0.85)
+            x1 = int(w * 0.15)
+            x2 = int(w * 0.85)
+            crop = img_bgr[y1:y2, x1:x2]
+
+            if crop.size == 0:
+                crop = img_bgr
+
+            # Mask out near-white and near-black background
+            white_mask = (crop[:, :, 0] > 230) & (crop[:, :, 1] > 230) & (crop[:, :, 2] > 230)
+            black_mask = (crop[:, :, 0] < 20) & (crop[:, :, 1] < 20) & (crop[:, :, 2] < 20)
+            valid_mask = ~(white_mask | black_mask)
+            pixels = crop[valid_mask]
+
+            # Fallback if mask too strict
+            if pixels.shape[0] < 500:
+                pixels = crop.reshape(-1, 3)
+
+            pixels = np.float32(pixels)
+            criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 10, 1.0)
+            K = 3
+            _, labels, centers = cv2.kmeans(pixels, K, None, criteria, 10, cv2.KMEANS_PP_CENTERS)
+            counts = np.bincount(labels.flatten())
+            dominant = centers[np.argmax(counts)].astype(np.uint8)
+            # BGR tuple
+            return int(dominant[0]), int(dominant[1]), int(dominant[2])
+        except Exception as e:
+            if self.debug:
+                print(f"[DEBUG] Dominant color extraction error: {e}")
+            return None
+
+    def _map_bgr_to_color_label(self, bgr: Tuple[int, int, int]) -> str:
+        """Map a BGR color to one of our domain color labels."""
+        b, g, r = bgr
+        hsv = cv2.cvtColor(np.uint8([[bgr]]), cv2.COLOR_BGR2HSV)[0, 0]
+        h = float(hsv[0]) / 180.0  # 0..1
+        s = float(hsv[1]) / 255.0
+        v = float(hsv[2]) / 255.0
+
+        hue_deg = h * 360.0
+
+        # Neutral/achromatic first
+        if v < 0.15:
+            return "black"
+        if s < 0.12:
+            # Preserve very light blues instead of falling to grey
+            if 180.0 <= hue_deg <= 260.0 and v > 0.55:
+                return "light blue"
+            # High value → white/cream, else grey
+            if v > 0.92:
+                # Slight yellow tint considered cream
+                if 20.0 <= hue_deg <= 60.0 and s < 0.25:
+                    return "cream"
+                return "white"
+            return "grey"
+
+        # Blues
+        if 190.0 <= hue_deg <= 260.0:
+            if v < 0.35:
+                return "navy"
+            # Sky/light blues: allow moderate saturation too
+            if v > 0.65 and s < 0.40:
+                return "light blue"
+            return "blue"
+
+        # Browns / Beiges
+        if 20.0 <= hue_deg <= 50.0:
+            if v > 0.80 and s < 0.40:
+                return "beige"
+            return "brown"
+
+        # Reds → burgundy when dark
+        if hue_deg >= 340.0 or hue_deg < 15.0:
+            if v < 0.45:
+                return "burgundy"
+            # fallback not commonly used; treat as brownish
+            return "brown"
+
+        # Greens
+        if 60.0 <= hue_deg <= 150.0:
+            if v < 0.60 and 70.0 <= hue_deg <= 100.0:
+                return "olive"
+            return "teal"
+
+        # Fallback
+        return "grey"
 
     def _slugify(self, text: str) -> str:
         """Make a filesystem- and URL-friendly slug."""
@@ -193,18 +299,26 @@ class ClothingIndexer:
         Use CLIP as a RANKING ENGINE to infer attributes across separate embedding spaces.
         
         METHODOLOGY:
-        1. Extract image embedding once
-        2. Rank against CATEGORY prompts → pick top-1 with score
-        3. Rank against COLOR prompts → pick top-1 with score  
-        4. Rank against STYLE prompts → keep top-3 with scores (multi-label distribution)
-        5. Optionally rank against PATTERN prompts → pick top-1 with score
+        1. Parse filename for category hint (GROUND TRUTH)
+        2. Extract image embedding once
+        3. Rank against CATEGORY prompts → if filename hints category, use it (override CLIP)
+        4. Rank against COLOR prompts → pick top-1 with score  
+        5. Rank against STYLE prompts → keep top-3 with scores (multi-label distribution)
+        6. Optionally rank against PATTERN prompts → pick top-1 with score
+        
+        FILENAME FORMAT (mandatory for clarity):
+        {category}-{color}-{style1}-{style2}-{hash}.jpeg
+        
+        Example: jeans-dark-blue-casual-minimalist-abc123.jpeg
+                 trousers-black-formal-minimalist-def456.jpeg
+                 cargo-khaki-casual-streetwear-ghi789.jpeg
         
         CLIP provides similarity rankings. Domain rules (in recommender) enforce constraints.
         
         Returns:
             Dict with:
             - image: filename
-            - category: top category label
+            - category: top category label (from filename hint if available, else CLIP)
             - category_score: confidence
             - color: top color label
             - color_score: confidence
@@ -214,6 +328,23 @@ class ClothingIndexer:
             - hash: file hash for cache validation
             - embedding: image vector
         """
+        # ========================================================
+        # STEP 0: EXTRACT CATEGORY HINT FROM FILENAME
+        # ========================================================
+        # Filename format: {category}-{color}-{style}-{style}-{hash}.ext
+        # Parse the first part as category hint
+        filename_without_ext = img_path.stem
+        parts = filename_without_ext.split('-')
+        
+        category_hint = None
+        if len(parts) > 0:
+            potential_category = parts[0].lower()
+            # Check if it's a known category
+            if potential_category in CATEGORY_PROMPTS:
+                category_hint = potential_category
+                if self.debug:
+                    print(f"[DEBUG] Category hint from filename: {category_hint}")
+        
         # Load and preprocess image
         with Image.open(img_path).convert('RGB') as image:
             image_input = self.preprocess(image).unsqueeze(0).to(self.device)
@@ -224,20 +355,29 @@ class ClothingIndexer:
             image_embedding = image_embedding / image_embedding.norm(dim=-1, keepdim=True)
 
         # ========================================================
-        # STEP 1: CATEGORY INFERENCE (independent space)
+        # STEP 1: CATEGORY INFERENCE (use filename hint as ground truth)
         # ========================================================
-        category_prompts_list = []
-        category_labels = []
-        for cat, prompts in CATEGORY_PROMPTS.items():
-            # Use first prompt variant for each category
-            category_prompts_list.append(prompts[0])
-            category_labels.append(cat)
-        
-        category, category_score = self._rank_top_1(
-            image_embedding, 
-            category_prompts_list, 
-            category_labels
-        )
+        if category_hint:
+            # Use filename hint as ground truth
+            category = category_hint
+            category_score = 1.0  # High confidence from filename
+            if self.debug:
+                print(f"[DEBUG] Using filename category: {category}")
+        else:
+            # Fall back to CLIP inference
+            category_prompts_list = []
+            category_labels = []
+            for cat, prompts in CATEGORY_PROMPTS.items():
+                category_prompts_list.append(prompts[0])
+                category_labels.append(cat)
+            
+            category, category_score = self._rank_top_1(
+                image_embedding, 
+                category_prompts_list, 
+                category_labels
+            )
+            if self.debug:
+                print(f"[DEBUG] CLIP inferred category: {category} ({category_score:.3f})")
 
         # ========================================================
         # STEP 2: COLOR INFERENCE (independent space)
@@ -254,6 +394,18 @@ class ClothingIndexer:
             color_prompts_list,
             color_labels
         )
+
+        # Pixel-based override for neutral/achromatic or obvious mismatches
+        dominant_bgr = self._extract_dominant_color(img_path)
+        if dominant_bgr is not None:
+            pixel_color = self._map_bgr_to_color_label(dominant_bgr)
+            if pixel_color and pixel_color != color:
+                # Prefer pixel-derived color for neutrals or strong mismatches
+                if pixel_color in {"grey", "black", "white", "cream", "beige", "navy"} or color in {"brown", "blue"}:
+                    if self.debug:
+                        print(f"[DEBUG] Overriding CLIP color: {color} -> {pixel_color} (pixel dominant)")
+                    color = pixel_color
+                    color_score = 0.99
 
         # ========================================================
         # STEP 3: STYLE INFERENCE (multi-label distribution)

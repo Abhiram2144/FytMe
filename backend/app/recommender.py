@@ -62,6 +62,9 @@ from .fashion_knowledge import (
     SHOE_CATEGORIES,
     get_allowed_colors_for_skin_tone,
     get_avoided_colors_for_skin_tone,
+    matches_allowed_color,
+    is_category_type_allowed,
+    is_pattern_allowed_in_style,
     are_styles_compatible,
     are_colors_harmonious,
     is_outfit_structure_valid,
@@ -134,10 +137,10 @@ class FashionRecommender:
         
         print(f"🎨 Skin tone {fitzpatrick_type}: allowed colors = {allowed_colors}")
         
-        # Filter catalog: ONLY items in allowed colors
+        # Filter catalog: ONLY items in allowed colors (using flexible matching)
         filtered_catalog = [
             item for item in self.catalog
-            if item.get("color", "").lower() in [c.lower() for c in allowed_colors]
+            if matches_allowed_color(item.get("color", ""), allowed_colors)
         ]
         
         if len(filtered_catalog) == 0:
@@ -157,17 +160,60 @@ class FashionRecommender:
         print(f"📊 Available: {len(tops)} tops, {len(bottoms)} bottoms, {len(shoes_items)} shoes")
         
         # ========================================================
-        # STEP 2.5: ENFORCE FORMALITY RULES (if needed)
+        # STEP 2.5: APPLY STRICT CATEGORY-TYPE & PATTERN RULES
+        # ========================================================
+        # HARD BLOCK: jeans/hoodies/cargo cannot appear in certain contexts
+        # This happens BEFORE any CLIP ranking (rules > perception)
+        
+        # Filter tops by category-type appropriateness
+        tops_filtered = []
+        for item in tops:
+            if is_category_type_allowed(item.get("category", ""), preferred_style):
+                tops_filtered.append(item)
+            else:
+                print(f"   ❌ Blocked top: {item['image']} (category={item.get('category')}, style={preferred_style})")
+        
+        tops_allowed = tops_filtered
+        
+        # Filter tops by pattern appropriateness
+        tops_filtered = []
+        for item in tops_allowed:
+            if is_pattern_allowed_in_style(item.get("pattern", "solid"), preferred_style):
+                tops_filtered.append(item)
+            else:
+                print(f"   ❌ Blocked top: {item['image']} (pattern={item.get('pattern')}, style={preferred_style})")
+        
+        tops_allowed = tops_filtered
+        
+        # Filter bottoms by category-type appropriateness
+        bottoms_filtered = []
+        for item in bottoms:
+            if is_category_type_allowed(item.get("category", ""), preferred_style):
+                bottoms_filtered.append(item)
+            else:
+                print(f"   ❌ Blocked bottom: {item['image']} (category={item.get('category')}, style={preferred_style})")
+        
+        bottoms_allowed = bottoms_filtered
+        
+        if len(tops_allowed) == 0 or len(bottoms_allowed) == 0:
+            print(f"⚠️  After strict rules: {len(tops_allowed)} tops, {len(bottoms_allowed)} bottoms")
+            print(f"    (Jeans/hoodies/cargo may be forbidden in {preferred_style})")
+            return []
+        
+        print(f"   ✓ After strict rules: {len(tops_allowed)} tops, {len(bottoms_allowed)} bottoms")
+        
+        # ========================================================
+        # STEP 3.0: ENFORCE FORMAL DRESS CODE (if needed)
         # ========================================================
         # For formal/dress occasions, restrict to appropriate categories
         if preferred_style.lower() == "formal":
             # Formal requires dress shirts (not t-shirts) and trousers (not jeans/joggers)
-            tops = [item for item in tops if item.get("category", "").lower() in ["shirt", "polo"]]
-            bottoms = [item for item in bottoms if item.get("category", "").lower() in ["trousers"]]
-            print(f"   (Formal dress code applied) → {len(tops)} tops, {len(bottoms)} bottoms")
+            tops_allowed = [item for item in tops_allowed if item.get("category", "").lower() in ["shirt", "polo"]]
+            bottoms_allowed = [item for item in bottoms_allowed if item.get("category", "").lower() in ["trousers"]]
+            print(f"   ✓ Formal dress code: {len(tops_allowed)} tops, {len(bottoms_allowed)} bottoms")
         
-        if len(tops) == 0 or len(bottoms) == 0:
-            print("⚠️  Insufficient items to create outfits (need at least 1 top and 1 bottom)")
+        if len(tops_allowed) == 0 or len(bottoms_allowed) == 0:
+            print("⚠️  Insufficient items after rule filtering")
             return []
         
         # ========================================================
@@ -177,8 +223,8 @@ class FashionRecommender:
         # CLIP has already ranked styles during indexing
         # We just extract the relevant score
         
-        tops_scored = self._score_items_by_style(tops, preferred_style)
-        bottoms_scored = self._score_items_by_style(bottoms, preferred_style)
+        tops_scored = self._score_items_by_style(tops_allowed, preferred_style)
+        bottoms_scored = self._score_items_by_style(bottoms_allowed, preferred_style)
         shoes_scored = self._score_items_by_style(shoes_items, preferred_style) if shoes_items else []
         
         # Sort by style affinity (keep top candidates)
@@ -186,9 +232,9 @@ class FashionRecommender:
         bottoms_scored.sort(key=lambda x: x["style_affinity"], reverse=True)
         shoes_scored.sort(key=lambda x: x["style_affinity"], reverse=True)
         
-        # Limit candidates for efficiency (top 10 of each)
-        tops_candidates = tops_scored[:10]
-        bottoms_candidates = bottoms_scored[:10]
+        # Use ALL available tops and bottoms to maximize outfit variety
+        tops_candidates = tops_scored  # Use all tops
+        bottoms_candidates = bottoms_scored  # Use all bottoms
         shoes_candidates = shoes_scored[:5] if shoes_scored else []
         
         print(f"🎯 Top candidates: {len(tops_candidates)} tops, {len(bottoms_candidates)} bottoms")
@@ -415,19 +461,19 @@ class FashionRecommender:
         Select diverse outfits from candidates.
         
         Strategy:
-        1) First pass: prefer unique (top_color, bottom_color) pairs and avoid item reuse
-        2) If fewer than num_outfits selected: second pass fills remaining slots
-           allowing repeated color pairs but still avoiding item reuse
+        - Prioritize unique (top_color, bottom_color) pairs initially
+        - But allow reusing colors if we need more outfits
+        - Only hard constraint: never reuse the exact same top or bottom item
         
-        This ensures we return up to num_outfits even when the catalog
-        has limited color variety.
+        This ensures we show variety in outfits even with limited catalog.
         """
         selected: List[Dict] = []
         seen_color_pairs: Set[Tuple[str, str]] = set()
         used_top_images: Set[str] = set()
         used_bottom_images: Set[str] = set()
+        selected_outfit_ids: Set[Tuple[str, str]] = set()
 
-        # First pass: enforce unique color pairs
+        # First pass: prefer unique color pairs
         for candidate in outfit_candidates:
             if len(selected) >= num_outfits:
                 break
@@ -436,41 +482,49 @@ class FashionRecommender:
             bottom = candidate["bottom"]
 
             color_pair = (top["color"], bottom["color"]) 
+            outfit_id = (top["image"], bottom["image"])
 
+            # Skip if exact same outfit
+            if outfit_id in selected_outfit_ids:
+                continue
+            
+            # Skip if items already used
+            if top["image"] in used_top_images or bottom["image"] in used_bottom_images:
+                continue
+
+            # Prefer unique color pairs but don't hard block
             if color_pair in seen_color_pairs:
-                continue
-            if top["image"] in used_top_images:
-                continue
-            if bottom["image"] in used_bottom_images:
                 continue
 
             selected.append(candidate)
             seen_color_pairs.add(color_pair)
             used_top_images.add(top["image"])
             used_bottom_images.add(bottom["image"])
+            selected_outfit_ids.add(outfit_id)
 
-        # Second pass: if we still need more, relax color-pair uniqueness
+        # Second pass: allow color pair reuse but still avoid item reuse
         if len(selected) < num_outfits:
             for candidate in outfit_candidates:
                 if len(selected) >= num_outfits:
                     break
 
-                # Skip ones already selected
-                if candidate in selected:
-                    continue
-
                 top = candidate["top"]
                 bottom = candidate["bottom"]
+                outfit_id = (top["image"], bottom["image"])
 
-                # Still avoid reusing the exact same items
-                if top["image"] in used_top_images:
+                # Skip ones already selected
+                if outfit_id in selected_outfit_ids:
                     continue
-                if bottom["image"] in used_bottom_images:
+
+                # Only avoid exact same items being reused
+                # (Allow different combinations)
+                if top["image"] in used_top_images or bottom["image"] in used_bottom_images:
                     continue
 
                 selected.append(candidate)
                 used_top_images.add(top["image"])
                 used_bottom_images.add(bottom["image"])
+                selected_outfit_ids.add(outfit_id)
 
         return selected
     
