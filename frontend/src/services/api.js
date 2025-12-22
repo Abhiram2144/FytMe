@@ -1,6 +1,10 @@
 import axios from 'axios';
 
-const API_BASE_URL = 'http://localhost:8000/api';
+// Configure API endpoints via Vite environment variables
+// VITE_API_BASE_URL example: https://your-backend.onrender.com/api
+// VITE_IMAGE_BASE_URL example: https://your-backend.onrender.com/api/images
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api';
+const IMAGE_BASE_URL = import.meta.env.VITE_IMAGE_BASE_URL || `${API_BASE_URL}/images`;
 
 // Analyze skin tone from uploaded image
 export const analyzeSkinTone = async (file) => {
@@ -35,5 +39,5 @@ export const getRecommendations = async (fitzpatrickType, preferredStyle) => {
 // Get image URL from backend
 export const getImageUrl = (filename) => {
   if (!filename) return '';
-  return `http://localhost:8000/api/images/${encodeURIComponent(filename)}`;
+  return `${IMAGE_BASE_URL}/${encodeURIComponent(filename)}`;
 };
